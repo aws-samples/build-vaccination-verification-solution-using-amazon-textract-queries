@@ -1,0 +1,4062 @@
+{
+ "Description": "IDP CDK constructs sample for ingesting large number of documents to OpenSearch (SO9217)",
+ "Metadata": {
+  "cdk_nag": {
+   "rules_to_suppress": [
+    {
+     "reason": "using AWSLambdaBasicExecutionRole",
+     "id": "AwsSolutions-IAM4"
+    },
+    {
+     "reason": "internal CDK to set bucket notifications: https://github.com/aws/aws-cdk/issues/9552 ",
+     "id": "AwsSolutions-IAM5"
+    }
+   ]
+  }
+ },
+ "Resources": {
+  "OpenSearchWorkflowBucket68E8053E": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "PublicAccessBlockConfiguration": {
+     "BlockPublicAcls": true,
+     "BlockPublicPolicy": true,
+     "IgnorePublicAcls": true,
+     "RestrictPublicBuckets": true
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchWorkflowBucket/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "no server access log for this demo",
+       "id": "AwsSolutions-S1"
+      }
+     ]
+    }
+   }
+  },
+  "OpenSearchWorkflowBucketPolicy17AB3EC7": {
+   "Type": "AWS::S3::BucketPolicy",
+   "Properties": {
+    "Bucket": {
+     "Ref": "OpenSearchWorkflowBucket68E8053E"
+    },
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "s3:*",
+       "Condition": {
+        "Bool": {
+         "aws:SecureTransport": "false"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "OpenSearchWorkflowBucket68E8053E",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "OpenSearchWorkflowBucket68E8053E",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchWorkflowBucket/Policy/Resource"
+   }
+  },
+  "OpenSearchWorkflowBucketNotifications9589E36D": {
+   "Type": "Custom::S3BucketNotifications",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691",
+      "Arn"
+     ]
+    },
+    "BucketName": {
+     "Ref": "OpenSearchWorkflowBucket68E8053E"
+    },
+    "NotificationConfiguration": {
+     "LambdaFunctionConfigurations": [
+      {
+       "Events": [
+        "s3:ObjectCreated:*"
+       ],
+       "Filter": {
+        "Key": {
+         "FilterRules": [
+          {
+           "Name": "prefix",
+           "Value": "uploads"
+          }
+         ]
+        }
+       },
+       "LambdaFunctionArn": {
+        "Fn::GetAtt": [
+         "ExecutionThrottleExecutionsStartThrottle3E0BC122",
+         "Arn"
+        ]
+       }
+      }
+     ]
+    },
+    "Managed": true
+   },
+   "DependsOn": [
+    "OpenSearchWorkflowBucketAllowBucketNotificationsToOpenSearchWorkflowExecutionThrottleExecutionsStartThrottleC01F3ECE6E889F71"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchWorkflowBucket/Notifications/Resource"
+   }
+  },
+  "OpenSearchWorkflowBucketAllowBucketNotificationsToOpenSearchWorkflowExecutionThrottleExecutionsStartThrottleC01F3ECE6E889F71": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ExecutionThrottleExecutionsStartThrottle3E0BC122",
+      "Arn"
+     ]
+    },
+    "Principal": "s3.amazonaws.com",
+    "SourceAccount": {
+     "Ref": "AWS::AccountId"
+    },
+    "SourceArn": {
+     "Fn::GetAtt": [
+      "OpenSearchWorkflowBucket68E8053E",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchWorkflowBucket/AllowBucketNotificationsToOpenSearchWorkflowExecutionThrottleExecutionsStartThrottleC01F3ECE"
+   }
+  },
+  "OpenSearchWorkflowDeciderTextractDeciderServiceRole95356301": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchWorkflow-Decider/TextractDecider/ServiceRole/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "using AWSLambdaBasicExecutionRole",
+       "id": "AwsSolutions-IAM4"
+      }
+     ]
+    }
+   }
+  },
+  "OpenSearchWorkflowDeciderTextractDeciderServiceRoleDefaultPolicyE0213DF9": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:GetObject",
+        "s3:ListBucket"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "OpenSearchWorkflowBucket68E8053E"
+           },
+           "/uploads/"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "OpenSearchWorkflowBucket68E8053E"
+           },
+           "/uploads/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "OpenSearchWorkflowDeciderTextractDeciderServiceRoleDefaultPolicyE0213DF9",
+    "Roles": [
+     {
+      "Ref": "OpenSearchWorkflowDeciderTextractDeciderServiceRole95356301"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchWorkflow-Decider/TextractDecider/ServiceRole/DefaultPolicy/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "wildcard permission is for everything under prefix",
+       "id": "AwsSolutions-IAM5"
+      }
+     ]
+    }
+   }
+  },
+  "OpenSearchWorkflowDeciderTextractDecider2E34625A": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:c88612b3f3b356d0509c886376bc6c4ea15ae2a67154c9e4a936e6665b2b7bb0"
+     }
+    },
+    "MemorySize": 1024,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "OpenSearchWorkflowDeciderTextractDeciderServiceRole95356301",
+      "Arn"
+     ]
+    },
+    "Timeout": 900
+   },
+   "DependsOn": [
+    "OpenSearchWorkflowDeciderTextractDeciderServiceRoleDefaultPolicyE0213DF9",
+    "OpenSearchWorkflowDeciderTextractDeciderServiceRole95356301"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchWorkflow-Decider/TextractDecider/Resource",
+    "aws:asset:path": "asset.c88612b3f3b356d0509c886376bc6c4ea15ae2a67154c9e4a936e6665b2b7bb0",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "DocumentSplitterDocumentSplitterFunctionServiceRole2B8505C0": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/DocumentSplitter/DocumentSplitterFunction/ServiceRole/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "using AWSLambdaBasicExecutionRole",
+       "id": "AwsSolutions-IAM4"
+      }
+     ]
+    }
+   }
+  },
+  "DocumentSplitterDocumentSplitterFunctionServiceRoleDefaultPolicyAE458904": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "s3:GetObject",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "OpenSearchWorkflowBucket68E8053E"
+           },
+           "/*"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "OpenSearchWorkflowBucket68E8053E"
+           },
+           "/uploads/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": "s3:ListBucket",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:s3:::",
+          {
+           "Ref": "OpenSearchWorkflowBucket68E8053E"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "Action": [
+        "s3:AbortMultipartUpload",
+        "s3:CreateMultipartUpload",
+        "s3:ListBucketMultipartUploads",
+        "s3:ListMultipartUploadParts",
+        "s3:PutObject"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "OpenSearchWorkflowBucket68E8053E"
+           },
+           "/textract-split-documents"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "OpenSearchWorkflowBucket68E8053E"
+           },
+           "/textract-split-documents/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "DocumentSplitterDocumentSplitterFunctionServiceRoleDefaultPolicyAE458904",
+    "Roles": [
+     {
+      "Ref": "DocumentSplitterDocumentSplitterFunctionServiceRole2B8505C0"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/DocumentSplitter/DocumentSplitterFunction/ServiceRole/DefaultPolicy/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "wildcard permission is for everything under prefix",
+       "id": "AwsSolutions-IAM5"
+      }
+     ]
+    }
+   }
+  },
+  "DocumentSplitterDocumentSplitterFunction8D7C2CF0": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:708b2986c0e50dc6b5f16014b55f08da777b3802fc7884539bfe5b51040e6500"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "S3_OUTPUT_BUCKET": {
+       "Ref": "OpenSearchWorkflowBucket68E8053E"
+      },
+      "S3_OUTPUT_PREFIX": "textract-split-documents",
+      "LOG_LEVEL": "INFO",
+      "MAX_NUMBER_OF_PAGES_PER_DOC": "2500"
+     }
+    },
+    "MemorySize": 10240,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "DocumentSplitterDocumentSplitterFunctionServiceRole2B8505C0",
+      "Arn"
+     ]
+    },
+    "Timeout": 900
+   },
+   "DependsOn": [
+    "DocumentSplitterDocumentSplitterFunctionServiceRoleDefaultPolicyAE458904",
+    "DocumentSplitterDocumentSplitterFunctionServiceRole2B8505C0"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/DocumentSplitter/DocumentSplitterFunction/Resource",
+    "aws:asset:path": "asset.708b2986c0e50dc6b5f16014b55f08da777b3802fc7884539bfe5b51040e6500",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "TextractAsyncTextractTaskTokenTableC036FA29": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "ID",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "ID",
+      "KeyType": "HASH"
+     }
+    ],
+    "TimeToLiveSpecification": {
+     "AttributeName": "ttltimestamp",
+     "Enabled": true
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/TextractAsync/TextractTaskTokenTable/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "no point-in-time-recovery required for demo",
+       "id": "AwsSolutions-DDB3"
+      }
+     ]
+    }
+   }
+  },
+  "TextractAsyncTextractAsyncSNSRole3D20F3D6": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "textract.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/AmazonSQSFullAccess"
+       ]
+      ]
+     },
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/AmazonSNSFullAccess"
+       ]
+      ]
+     },
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/AmazonS3ReadOnlyAccess"
+       ]
+      ]
+     },
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/AmazonTextractFullAccess"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/TextractAsync/TextractAsyncSNSRole/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "following Textract SNS best practices",
+       "id": "AwsSolutions-IAM4"
+      }
+     ]
+    }
+   }
+  },
+  "TextractAsyncTextractAsyncSNSBB89DC08": {
+   "Type": "AWS::SNS::Topic",
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/TextractAsync/TextractAsyncSNS/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "publisher is only Textract",
+       "id": "AwsSolutions-SNS3"
+      },
+      {
+       "reason": "no SNS encryption for demo",
+       "id": "AwsSolutions-SNS2"
+      }
+     ]
+    }
+   }
+  },
+  "TextractAsyncTextractAsyncCallServiceRole5AD11AEF": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/TextractAsync/TextractAsyncCall/ServiceRole/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "using AWSLambdaBasicExecutionRole",
+       "id": "AwsSolutions-IAM4"
+      }
+     ]
+    }
+   }
+  },
+  "TextractAsyncTextractAsyncCallServiceRoleDefaultPolicy458B5442": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "states:SendTaskFailure",
+        "textract:Get*",
+        "textract:Start*"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      },
+      {
+       "Action": "s3:GetObject",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "OpenSearchWorkflowBucket68E8053E"
+           },
+           "/*"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "OpenSearchWorkflowBucket68E8053E"
+           },
+           "/textract-split-documents/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": "s3:ListBucket",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:s3:::",
+          {
+           "Ref": "OpenSearchWorkflowBucket68E8053E"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "Action": "s3:PutObject",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "OpenSearchWorkflowBucket68E8053E"
+           },
+           "/textract-temp/"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "OpenSearchWorkflowBucket68E8053E"
+           },
+           "/textract-temp/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "TextractAsyncTextractTaskTokenTableC036FA29",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TextractAsyncTextractAsyncCallServiceRoleDefaultPolicy458B5442",
+    "Roles": [
+     {
+      "Ref": "TextractAsyncTextractAsyncCallServiceRole5AD11AEF"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/TextractAsync/TextractAsyncCall/ServiceRole/DefaultPolicy/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "access only for bucket and prefix",
+       "id": "AwsSolutions-IAM5"
+      }
+     ]
+    }
+   }
+  },
+  "TextractAsyncTextractAsyncCall644804C6": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:d52863a8a715725aea86e462bd1b6e554c84642dd1171d335cc7205622c342d1"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "NOTIFICATION_SNS": {
+       "Ref": "TextractAsyncTextractAsyncSNSBB89DC08"
+      },
+      "NOTIFICATION_ROLE_ARN": {
+       "Fn::GetAtt": [
+        "TextractAsyncTextractAsyncSNSRole3D20F3D6",
+        "Arn"
+       ]
+      },
+      "TOKEN_STORE_DDB": {
+       "Ref": "TextractAsyncTextractTaskTokenTableC036FA29"
+      },
+      "S3_OUTPUT_BUCKET": {
+       "Ref": "OpenSearchWorkflowBucket68E8053E"
+      },
+      "S3_TEMP_OUTPUT_PREFIX": "textract-temp",
+      "LOG_LEVEL": "INFO",
+      "TEXTRACT_API": "GENERIC"
+     }
+    },
+    "MemorySize": 512,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncCallServiceRole5AD11AEF",
+      "Arn"
+     ]
+    },
+    "Timeout": 300
+   },
+   "DependsOn": [
+    "TextractAsyncTextractAsyncCallServiceRoleDefaultPolicy458B5442",
+    "TextractAsyncTextractAsyncCallServiceRole5AD11AEF"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/TextractAsync/TextractAsyncCall/Resource",
+    "aws:asset:path": "asset.d52863a8a715725aea86e462bd1b6e554c84642dd1171d335cc7205622c342d1",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionServiceRole33A95889": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/TextractAsync/TextractAsyncSNSFunction/ServiceRole/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "using AWSLambdaBasicExecutionRole",
+       "id": "AwsSolutions-IAM4"
+      }
+     ]
+    }
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionServiceRoleDefaultPolicyAD3C2896": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "dynamodb:GetItem",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "TextractAsyncTextractTaskTokenTableC036FA29",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "states:SendTaskFailure",
+        "states:SendTaskSuccess"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TextractAsyncTextractAsyncSNSFunctionServiceRoleDefaultPolicyAD3C2896",
+    "Roles": [
+     {
+      "Ref": "TextractAsyncTextractAsyncSNSFunctionServiceRole33A95889"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/TextractAsync/TextractAsyncSNSFunction/ServiceRole/DefaultPolicy/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "access only for bucket and prefix and state machine does not allow for resource constrain",
+       "id": "AwsSolutions-IAM5"
+      }
+     ]
+    }
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionFDB63B51": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:bb5b52a2747496721293f581a5e4f818e69024d4f98085f9f0bc94865c37b01c"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "TOKEN_STORE_DDB": {
+       "Ref": "TextractAsyncTextractTaskTokenTableC036FA29"
+      },
+      "S3_OUTPUT_BUCKET": {
+       "Ref": "OpenSearchWorkflowBucket68E8053E"
+      },
+      "S3_TEMP_OUTPUT_PREFIX": "textract-temp",
+      "TEXTRACT_API": "GENERIC",
+      "LOG_LEVEL": "INFO"
+     }
+    },
+    "MemorySize": 128,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncSNSFunctionServiceRole33A95889",
+      "Arn"
+     ]
+    },
+    "Timeout": 900
+   },
+   "DependsOn": [
+    "TextractAsyncTextractAsyncSNSFunctionServiceRoleDefaultPolicyAD3C2896",
+    "TextractAsyncTextractAsyncSNSFunctionServiceRole33A95889"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/TextractAsync/TextractAsyncSNSFunction/Resource",
+    "aws:asset:path": "asset.bb5b52a2747496721293f581a5e4f818e69024d4f98085f9f0bc94865c37b01c",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionAllowInvokeOpenSearchWorkflowTextractAsyncTextractAsyncSNSEEDABAEEF0CF80F5": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncSNSFunctionFDB63B51",
+      "Arn"
+     ]
+    },
+    "Principal": "sns.amazonaws.com",
+    "SourceArn": {
+     "Ref": "TextractAsyncTextractAsyncSNSBB89DC08"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/TextractAsync/TextractAsyncSNSFunction/AllowInvoke:OpenSearchWorkflowTextractAsyncTextractAsyncSNSEEDABAEE"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionTextractAsyncSNS0BE323B1": {
+   "Type": "AWS::SNS::Subscription",
+   "Properties": {
+    "Endpoint": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncSNSFunctionFDB63B51",
+      "Arn"
+     ]
+    },
+    "Protocol": "lambda",
+    "TopicArn": {
+     "Ref": "TextractAsyncTextractAsyncSNSBB89DC08"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/TextractAsync/TextractAsyncSNSFunction/TextractAsyncSNS/Resource"
+   }
+  },
+  "TextractAsyncStateMachineRoleDF5BF968": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": {
+         "Fn::Join": [
+          "",
+          [
+           "states.",
+           {
+            "Ref": "AWS::Region"
+           },
+           ".amazonaws.com"
+          ]
+         ]
+        }
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/TextractAsync/StateMachine/Role/Resource"
+   }
+  },
+  "TextractAsyncStateMachineRoleDefaultPolicy042AFF96": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "TextractAsyncTextractAsyncCall644804C6",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "TextractAsyncTextractAsyncCall644804C6",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TextractAsyncStateMachineRoleDefaultPolicy042AFF96",
+    "Roles": [
+     {
+      "Ref": "TextractAsyncStateMachineRoleDF5BF968"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/TextractAsync/StateMachine/Role/DefaultPolicy/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "access only for bucket and prefix and state machine does not allow for resource constrain",
+       "id": "AwsSolutions-IAM5"
+      }
+     ]
+    }
+   }
+  },
+  "TextractAsyncStateMachineCD4A0F0B": {
+   "Type": "AWS::StepFunctions::StateMachine",
+   "Properties": {
+    "DefinitionString": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"StartAt\":\"TextractAsyncCallTask\",\"States\":{\"TextractAsyncCallTask\":{\"End\":true,\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2},{\"ErrorEquals\":[\"ThrottlingException\",\"LimitExceededException\",\"InternalServerError\",\"ProvisionedThroughputExceededException\",\"Lambda.TooManyRequestsException\",\"ConnectionClosedException\",\"Lambda.Unknown\"],\"IntervalSeconds\":1,\"MaxAttempts\":50000,\"BackoffRate\":1.1}],\"Type\":\"Task\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::lambda:invoke\",\"Parameters\":{\"FunctionName\":\"",
+       {
+        "Fn::GetAtt": [
+         "TextractAsyncTextractAsyncCall644804C6",
+         "Arn"
+        ]
+       },
+       "\",\"Payload.$\":\"$\"}}},\"TimeoutSeconds\":10368000}"
+      ]
+     ]
+    },
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "TextractAsyncStateMachineRoleDF5BF968",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "TextractAsyncStateMachineRoleDefaultPolicy042AFF96",
+    "TextractAsyncStateMachineRoleDF5BF968"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/TextractAsync/StateMachine/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "no logging for StateMachine for demo",
+       "id": "AwsSolutions-SF1"
+      },
+      {
+       "reason": "no X-Ray logging for demo",
+       "id": "AwsSolutions-SF2"
+      }
+     ]
+    }
+   }
+  },
+  "TextractAsyncToJSON2TextractAsyncToJSONServiceRoleCF48ADBC": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/TextractAsyncToJSON2/TextractAsyncToJSON/ServiceRole/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "using AWSLambdaBasicExecutionRole",
+       "id": "AwsSolutions-IAM4"
+      }
+     ]
+    }
+   }
+  },
+  "TextractAsyncToJSON2TextractAsyncToJSONServiceRoleDefaultPolicy31C8644B": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "s3:GetObject",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:s3:::",
+          {
+           "Ref": "OpenSearchWorkflowBucket68E8053E"
+          },
+          "/textract-temp/*"
+         ]
+        ]
+       }
+      },
+      {
+       "Action": "s3:ListBucket",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:s3:::",
+          {
+           "Ref": "OpenSearchWorkflowBucket68E8053E"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "Action": "s3:PutObject",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "OpenSearchWorkflowBucket68E8053E"
+           },
+           "/textract-output/"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "OpenSearchWorkflowBucket68E8053E"
+           },
+           "/textract-output/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TextractAsyncToJSON2TextractAsyncToJSONServiceRoleDefaultPolicy31C8644B",
+    "Roles": [
+     {
+      "Ref": "TextractAsyncToJSON2TextractAsyncToJSONServiceRoleCF48ADBC"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/TextractAsyncToJSON2/TextractAsyncToJSON/ServiceRole/DefaultPolicy/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "wildcard permission is for everything under prefix",
+       "id": "AwsSolutions-IAM5"
+      }
+     ]
+    }
+   }
+  },
+  "TextractAsyncToJSON2TextractAsyncToJSONF8831971": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:2941b022fa5b0c7498d53d8a01c9c7c80a8c5286a64ed22bc0122c0b714ab7da"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "S3_OUTPUT_BUCKET": {
+       "Ref": "OpenSearchWorkflowBucket68E8053E"
+      },
+      "S3_OUTPUT_PREFIX": "textract-output",
+      "LOG_LEVEL": "INFO",
+      "TEXTRACT_API": "GENERIC"
+     }
+    },
+    "MemorySize": 10240,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "TextractAsyncToJSON2TextractAsyncToJSONServiceRoleCF48ADBC",
+      "Arn"
+     ]
+    },
+    "Timeout": 900
+   },
+   "DependsOn": [
+    "TextractAsyncToJSON2TextractAsyncToJSONServiceRoleDefaultPolicy31C8644B",
+    "TextractAsyncToJSON2TextractAsyncToJSONServiceRoleCF48ADBC"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/TextractAsyncToJSON2/TextractAsyncToJSON/Resource",
+    "aws:asset:path": "asset.2941b022fa5b0c7498d53d8a01c9c7c80a8c5286a64ed22bc0122c0b714ab7da",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "GenerateOpenSearchBatchTextractCSVGeneratorServiceRoleBC5AB52F": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/GenerateOpenSearchBatch/TextractCSVGenerator/ServiceRole/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "using AWSLambdaBasicExecutionRole",
+       "id": "AwsSolutions-IAM4"
+      }
+     ]
+    }
+   }
+  },
+  "GenerateOpenSearchBatchTextractCSVGeneratorServiceRoleDefaultPolicy9410544D": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "s3:GetObject",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:s3:::",
+          {
+           "Ref": "OpenSearchWorkflowBucket68E8053E"
+          },
+          "/textract-output/*"
+         ]
+        ]
+       }
+      },
+      {
+       "Action": "s3:ListBucket",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:s3:::",
+          {
+           "Ref": "OpenSearchWorkflowBucket68E8053E"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "Action": "s3:PutObject",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "OpenSearchWorkflowBucket68E8053E"
+           },
+           "/textract-opensearch-output/"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "OpenSearchWorkflowBucket68E8053E"
+           },
+           "/textract-opensearch-output/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "states:SendTaskFailure",
+        "states:SendTaskSuccess"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "GenerateOpenSearchBatchTextractCSVGeneratorServiceRoleDefaultPolicy9410544D",
+    "Roles": [
+     {
+      "Ref": "GenerateOpenSearchBatchTextractCSVGeneratorServiceRoleBC5AB52F"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/GenerateOpenSearchBatch/TextractCSVGenerator/ServiceRole/DefaultPolicy/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "wildcard permission is for everything under prefix",
+       "id": "AwsSolutions-IAM5"
+      }
+     ]
+    }
+   }
+  },
+  "GenerateOpenSearchBatchTextractCSVGeneratorF8B85C54": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:35896a31a429d7e80cdecdd32ab580e543a3b40ff9b9c00d6aa10ae1f7538749"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "CSV_S3_OUTPUT_BUCKET": {
+       "Ref": "OpenSearchWorkflowBucket68E8053E"
+      },
+      "CSV_S3_OUTPUT_PREFIX": "textract-opensearch-output",
+      "LOG_LEVEL": "INFO",
+      "OUTPUT_TYPE": "OPENSEARCH_BATCH",
+      "OUTPUT_FEATURES": "FORMS,QUERIES,SIGNATURES,TABLES",
+      "OPENSEARCH_INDEX": "papers-index",
+      "TEXTRACT_API": "GENERIC",
+      "META_DATA_TO_APPEND": ""
+     }
+    },
+    "MemorySize": 10240,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "GenerateOpenSearchBatchTextractCSVGeneratorServiceRoleBC5AB52F",
+      "Arn"
+     ]
+    },
+    "Timeout": 300
+   },
+   "DependsOn": [
+    "GenerateOpenSearchBatchTextractCSVGeneratorServiceRoleDefaultPolicy9410544D",
+    "GenerateOpenSearchBatchTextractCSVGeneratorServiceRoleBC5AB52F"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/GenerateOpenSearchBatch/TextractCSVGenerator/Resource",
+    "aws:asset:path": "asset.35896a31a429d7e80cdecdd32ab580e543a3b40ff9b9c00d6aa10ae1f7538749",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "GenerateOpenSearchBatchStateMachineRole8718C40D": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": {
+         "Fn::Join": [
+          "",
+          [
+           "states.",
+           {
+            "Ref": "AWS::Region"
+           },
+           ".amazonaws.com"
+          ]
+         ]
+        }
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/GenerateOpenSearchBatch/StateMachine/Role/Resource"
+   }
+  },
+  "GenerateOpenSearchBatchStateMachineRoleDefaultPolicy44F219D5": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "GenerateOpenSearchBatchTextractCSVGeneratorF8B85C54",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "GenerateOpenSearchBatchTextractCSVGeneratorF8B85C54",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "GenerateOpenSearchBatchStateMachineRoleDefaultPolicy44F219D5",
+    "Roles": [
+     {
+      "Ref": "GenerateOpenSearchBatchStateMachineRole8718C40D"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/GenerateOpenSearchBatch/StateMachine/Role/DefaultPolicy/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "wildcard permission is for everything under prefix",
+       "id": "AwsSolutions-IAM5"
+      }
+     ]
+    }
+   }
+  },
+  "GenerateOpenSearchBatchStateMachineF0C39204": {
+   "Type": "AWS::StepFunctions::StateMachine",
+   "Properties": {
+    "DefinitionString": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"StartAt\":\"csvGeneratorInvoke\",\"States\":{\"csvGeneratorInvoke\":{\"End\":true,\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2},{\"ErrorEquals\":[\"Lambda.TooManyRequestsException\",\"Lambda.Unknown\"],\"IntervalSeconds\":1,\"MaxAttempts\":100,\"BackoffRate\":1.1}],\"Type\":\"Task\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::lambda:invoke\",\"Parameters\":{\"FunctionName\":\"",
+       {
+        "Fn::GetAtt": [
+         "GenerateOpenSearchBatchTextractCSVGeneratorF8B85C54",
+         "Arn"
+        ]
+       },
+       "\",\"Payload.$\":\"$\"}}}}"
+      ]
+     ]
+    },
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "GenerateOpenSearchBatchStateMachineRole8718C40D",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "GenerateOpenSearchBatchStateMachineRoleDefaultPolicy44F219D5",
+    "GenerateOpenSearchBatchStateMachineRole8718C40D"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/GenerateOpenSearchBatch/StateMachine/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "no logging for StateMachine for demo",
+       "id": "AwsSolutions-SF1"
+      },
+      {
+       "reason": "no X-Ray logging for demo",
+       "id": "AwsSolutions-SF2"
+      }
+     ]
+    }
+   }
+  },
+  "LambdaOpenSearchPushServiceRoleF4F5A03F": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/LambdaOpenSearchPush/ServiceRole/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "using AWSLambdaBasicExecutionRole",
+       "id": "AwsSolutions-IAM4"
+      }
+     ]
+    }
+   }
+  },
+  "LambdaOpenSearchPushServiceRoleDefaultPolicyCF5115ED": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:Get*",
+        "s3:List*"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "OpenSearchWorkflowBucket68E8053E",
+             "Arn"
+            ]
+           },
+           "/textract-opensearch-output"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "OpenSearchWorkflowBucket68E8053E",
+             "Arn"
+            ]
+           },
+           "/textract-opensearch-output/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "LambdaOpenSearchPushServiceRoleDefaultPolicyCF5115ED",
+    "Roles": [
+     {
+      "Ref": "LambdaOpenSearchPushServiceRoleF4F5A03F"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/LambdaOpenSearchPush/ServiceRole/DefaultPolicy/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "wildcard permission is for everything under prefix",
+       "id": "AwsSolutions-IAM5"
+      }
+     ]
+    }
+   }
+  },
+  "LambdaOpenSearchPush8560B101": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:5b6e598125df95583fec310ec904174defe8acfc88e0bab82bbafd70715f91c6"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "LOG_LEVEL": "INFO",
+      "DOMAIN_ENDPOINT": {
+       "Fn::GetAtt": [
+        "OpenSearchResourcesOpenSearchDomain725BF176",
+        "DomainEndpoint"
+       ]
+      }
+     }
+    },
+    "MemorySize": 10240,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "LambdaOpenSearchPushServiceRoleF4F5A03F",
+      "Arn"
+     ]
+    },
+    "Timeout": 900
+   },
+   "DependsOn": [
+    "LambdaOpenSearchPushServiceRoleDefaultPolicyCF5115ED",
+    "LambdaOpenSearchPushServiceRoleF4F5A03F"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/LambdaOpenSearchPush/Resource",
+    "aws:asset:path": "asset.5b6e598125df95583fec310ec904174defe8acfc88e0bab82bbafd70715f91c6",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "OpenSearchResourcesCognitoUserPoolEB6B5775": {
+   "Type": "AWS::Cognito::UserPool",
+   "Properties": {
+    "AccountRecoverySetting": {
+     "RecoveryMechanisms": [
+      {
+       "Name": "verified_phone_number",
+       "Priority": 1
+      },
+      {
+       "Name": "verified_email",
+       "Priority": 2
+      }
+     ]
+    },
+    "AdminCreateUserConfig": {
+     "AllowAdminCreateUserOnly": true
+    },
+    "EmailVerificationMessage": "The verification code to your new account is {####}",
+    "EmailVerificationSubject": "Verify your new account",
+    "SmsVerificationMessage": "The verification code to your new account is {####}",
+    "UserPoolAddOns": {
+     "AdvancedSecurityMode": "ENFORCED"
+    },
+    "VerificationMessageTemplate": {
+     "DefaultEmailOption": "CONFIRM_WITH_CODE",
+     "EmailMessage": "The verification code to your new account is {####}",
+     "EmailSubject": "Verify your new account",
+     "SmsMessage": "The verification code to your new account is {####}"
+    }
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchResources/CognitoUserPool/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "no password policy for demo",
+       "id": "AwsSolutions-COG1"
+      },
+      {
+       "reason": "no MFA for demo",
+       "id": "AwsSolutions-COG2"
+      }
+     ]
+    }
+   }
+  },
+  "OpenSearchResourcesCognitoUserPoolClient3BC02253": {
+   "Type": "AWS::Cognito::UserPoolClient",
+   "Properties": {
+    "AllowedOAuthFlows": [
+     "implicit",
+     "code"
+    ],
+    "AllowedOAuthFlowsUserPoolClient": true,
+    "AllowedOAuthScopes": [
+     "profile",
+     "phone",
+     "email",
+     "openid",
+     "aws.cognito.signin.user.admin"
+    ],
+    "CallbackURLs": [
+     "https://example.com"
+    ],
+    "SupportedIdentityProviders": [
+     "COGNITO"
+    ],
+    "UserPoolId": {
+     "Ref": "OpenSearchResourcesCognitoUserPoolEB6B5775"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchResources/CognitoUserPoolClient/Resource"
+   }
+  },
+  "OpenSearchResourcesCognitoIdentityPoolCE5D52AA": {
+   "Type": "AWS::Cognito::IdentityPool",
+   "Properties": {
+    "AllowUnauthenticatedIdentities": false,
+    "CognitoIdentityProviders": [
+     {
+      "ClientId": {
+       "Ref": "OpenSearchResourcesCognitoUserPoolClient3BC02253"
+      },
+      "ProviderName": {
+       "Fn::GetAtt": [
+        "OpenSearchResourcesCognitoUserPoolEB6B5775",
+        "ProviderName"
+       ]
+      },
+      "ServerSideTokenCheck": true
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchResources/CognitoIdentityPool"
+   }
+  },
+  "OpenSearchResourcesUserPoolDomain7FF2B797": {
+   "Type": "AWS::Cognito::UserPoolDomain",
+   "Properties": {
+    "Domain": {
+     "Fn::Join": [
+      "",
+      [
+       "opensearchworkflow-",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       "-",
+       {
+        "Ref": "AWS::Region"
+       }
+      ]
+     ]
+    },
+    "UserPoolId": {
+     "Ref": "OpenSearchResourcesCognitoUserPoolEB6B5775"
+    }
+   },
+   "DependsOn": [
+    "OpenSearchResourcesCognitoUserPoolEB6B5775"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchResources/UserPoolDomain"
+   }
+  },
+  "OpenSearchResourcesCognitoAuthorizedRoleD15B037A": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRoleWithWebIdentity",
+       "Condition": {
+        "StringEquals": {
+         "cognito-identity.amazonaws.com:aud": {
+          "Ref": "OpenSearchResourcesCognitoIdentityPoolCE5D52AA"
+         }
+        },
+        "ForAnyValue:StringLike": {
+         "cognito-identity.amazonaws.com:amr": "authenticated"
+        }
+       },
+       "Effect": "Allow",
+       "Principal": {
+        "Federated": "cognito-identity.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "Policies": [
+     {
+      "PolicyDocument": {
+       "Statement": [
+        {
+         "Action": "es:ESHttp*",
+         "Effect": "Allow",
+         "Resource": {
+          "Fn::Join": [
+           "",
+           [
+            "arn:",
+            {
+             "Ref": "AWS::Partition"
+            },
+            ":es:",
+            {
+             "Ref": "AWS::Region"
+            },
+            ":",
+            {
+             "Ref": "AWS::AccountId"
+            },
+            ":domain/opensearchworkflow-",
+            {
+             "Ref": "AWS::AccountId"
+            },
+            "-",
+            {
+             "Ref": "AWS::Region"
+            },
+            "/*"
+           ]
+          ]
+         }
+        }
+       ],
+       "Version": "2012-10-17"
+      },
+      "PolicyName": "CognitoAccessPolicy"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchResources/CognitoAuthorizedRole/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "wildcard for es:ESHttp*",
+       "id": "AwsSolutions-IAM5"
+      }
+     ]
+    }
+   }
+  },
+  "OpenSearchResourcesIdentityPoolRoleMapping59752936": {
+   "Type": "AWS::Cognito::IdentityPoolRoleAttachment",
+   "Properties": {
+    "IdentityPoolId": {
+     "Ref": "OpenSearchResourcesCognitoIdentityPoolCE5D52AA"
+    },
+    "Roles": {
+     "authenticated": {
+      "Fn::GetAtt": [
+       "OpenSearchResourcesCognitoAuthorizedRoleD15B037A",
+       "Arn"
+      ]
+     }
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchResources/IdentityPoolRoleMapping"
+   }
+  },
+  "OpenSearchResourcesCognitoDashboardConfigureRole09D17913": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "es.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchResources/CognitoDashboardConfigureRole/Resource"
+   }
+  },
+  "OpenSearchResourcesCognitoDashboardConfigureRolePolicy0E97FA43": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "cognito-identity:DescribeIdentityPool",
+        "cognito-identity:GetIdentityPoolRoles",
+        "cognito-identity:SetIdentityPoolRoles",
+        "cognito-identity:UpdateIdentityPool",
+        "cognito-idp:AdminInitiateAuth",
+        "cognito-idp:AdminUserGlobalSignOut",
+        "cognito-idp:CreateUserPoolClient",
+        "cognito-idp:DeleteUserPoolClient",
+        "cognito-idp:DescribeUserPool",
+        "cognito-idp:DescribeUserPoolClient",
+        "cognito-idp:ListUserPoolClients",
+        "es:UpdateDomainConfig"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "OpenSearchResourcesCognitoUserPoolEB6B5775",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:",
+           {
+            "Ref": "AWS::Partition"
+           },
+           ":cognito-identity:",
+           {
+            "Ref": "AWS::Region"
+           },
+           ":",
+           {
+            "Ref": "AWS::AccountId"
+           },
+           ":identitypool/",
+           {
+            "Ref": "OpenSearchResourcesCognitoIdentityPoolCE5D52AA"
+           }
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:",
+           {
+            "Ref": "AWS::Partition"
+           },
+           ":es:",
+           {
+            "Ref": "AWS::Region"
+           },
+           ":",
+           {
+            "Ref": "AWS::AccountId"
+           },
+           ":domain/idp-cdk-opensearch"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": "iam:PassRole",
+       "Condition": {
+        "StringLike": {
+         "iam:PassedToService": "cognito-identity.amazonaws.com"
+        }
+       },
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "OpenSearchResourcesCognitoDashboardConfigureRole09D17913",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "OpenSearchResourcesCognitoDashboardConfigureRolePolicy0E97FA43",
+    "Roles": [
+     {
+      "Ref": "OpenSearchResourcesCognitoDashboardConfigureRole09D17913"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchResources/CognitoDashboardConfigureRolePolicy/Resource"
+   }
+  },
+  "OpenSearchResourcesOpenSearchDomain725BF176": {
+   "Type": "AWS::OpenSearchService::Domain",
+   "Properties": {
+    "AccessPolicies": {
+     "Statement": [
+      {
+       "Action": "es:ESHttp*",
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": [
+         {
+          "Fn::GetAtt": [
+           "LambdaOpenSearchPushServiceRoleF4F5A03F",
+           "Arn"
+          ]
+         },
+         {
+          "Fn::GetAtt": [
+           "OpenSearchResourcesCognitoAuthorizedRoleD15B037A",
+           "Arn"
+          ]
+         }
+        ]
+       },
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:",
+          {
+           "Ref": "AWS::Partition"
+          },
+          ":es:",
+          {
+           "Ref": "AWS::Region"
+          },
+          ":",
+          {
+           "Ref": "AWS::AccountId"
+          },
+          ":domain/idp-cdk-opensearch/*"
+         ]
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ClusterConfig": {
+     "InstanceType": "m6g.large.search"
+    },
+    "CognitoOptions": {
+     "Enabled": true,
+     "IdentityPoolId": {
+      "Ref": "OpenSearchResourcesCognitoIdentityPoolCE5D52AA"
+     },
+     "RoleArn": {
+      "Fn::GetAtt": [
+       "OpenSearchResourcesCognitoDashboardConfigureRole09D17913",
+       "Arn"
+      ]
+     },
+     "UserPoolId": {
+      "Ref": "OpenSearchResourcesCognitoUserPoolEB6B5775"
+     }
+    },
+    "DomainName": "idp-cdk-opensearch",
+    "EBSOptions": {
+     "EBSEnabled": true,
+     "VolumeSize": 200,
+     "VolumeType": "gp2"
+    },
+    "EncryptionAtRestOptions": {
+     "Enabled": true
+    },
+    "EngineVersion": "OpenSearch_2.7",
+    "NodeToNodeEncryptionOptions": {
+     "Enabled": true
+    },
+    "SnapshotOptions": {
+     "AutomatedSnapshotStartHour": 1
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchResources/OpenSearchDomain",
+    "cfn_nag": {
+     "rules_to_suppress": [
+      {
+       "id": "W28",
+       "reason": "The OpenSearch Service domain is passed dynamically as as parameter and explicitly specified to ensure that IAM policies are configured to lockdown access to this specific OpenSearch Service instance only"
+      },
+      {
+       "id": "W90",
+       "reason": "This is not a rule for the general case, just for specific use cases/industries"
+      }
+     ]
+    },
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "no VPC for demo",
+       "id": "AwsSolutions-OS1"
+      },
+      {
+       "reason": "users have to be authorized to access, not limit on IP for demo",
+       "id": "AwsSolutions-OS3"
+      },
+      {
+       "reason": "no dedicated master for demo",
+       "id": "AwsSolutions-OS4"
+      },
+      {
+       "reason": "no zone awareness for demo",
+       "id": "AwsSolutions-OS7"
+      },
+      {
+       "reason": "no minimally publish SEARCH_SLOW_LOGS and INDEX_SLOW_LOGS to CloudWatch Logs.",
+       "id": "AwsSolutions-OS9"
+      }
+     ]
+    }
+   }
+  },
+  "OpenSearchResourcesStatusRedAlarmAC027286": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmDescription": "At least one primary shard and its replicas are not allocated to a node. ",
+    "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+    "EvaluationPeriods": 1,
+    "MetricName": "ClusterStatus.red",
+    "Namespace": "AWS/ES",
+    "Period": 60,
+    "Statistic": "Maximum",
+    "Threshold": 1
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchResources/StatusRedAlarm/Resource"
+   }
+  },
+  "OpenSearchResourcesStatusYellowAlarm99321908": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmDescription": "At least one replica shard is not allocated to a node.",
+    "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+    "EvaluationPeriods": 1,
+    "MetricName": "ClusterStatus.yellow",
+    "Namespace": "AWS/ES",
+    "Period": 60,
+    "Statistic": "Maximum",
+    "Threshold": 1
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchResources/StatusYellowAlarm/Resource"
+   }
+  },
+  "OpenSearchResourcesFreeStorageSpaceTooLowAlarm083549C9": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmDescription": "A node in your cluster is down to 20 GiB of free storage space.",
+    "ComparisonOperator": "LessThanOrEqualToThreshold",
+    "EvaluationPeriods": 1,
+    "MetricName": "FreeStorageSpace",
+    "Namespace": "AWS/ES",
+    "Period": 60,
+    "Statistic": "Minimum",
+    "Threshold": 20000
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchResources/FreeStorageSpaceTooLowAlarm/Resource"
+   }
+  },
+  "OpenSearchResourcesIndexWritesBlockedTooHighAlarmAA5FCA96": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmDescription": "Your cluster is blocking write requests.",
+    "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+    "EvaluationPeriods": 1,
+    "MetricName": "ClusterIndexWritesBlocked",
+    "Namespace": "AWS/ES",
+    "Period": 300,
+    "Statistic": "Maximum",
+    "Threshold": 1
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchResources/IndexWritesBlockedTooHighAlarm/Resource"
+   }
+  },
+  "OpenSearchResourcesAutomatedSnapshotFailureTooHighAlarmDC5B7DC7": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmDescription": "An automated snapshot failed. This failure is often the result of a red cluster health status.",
+    "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+    "EvaluationPeriods": 1,
+    "MetricName": "AutomatedSnapshotFailure",
+    "Namespace": "AWS/ES",
+    "Period": 60,
+    "Statistic": "Maximum",
+    "Threshold": 1
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchResources/AutomatedSnapshotFailureTooHighAlarm/Resource"
+   }
+  },
+  "OpenSearchResourcesCPUUtilizationTooHighAlarm875E55B7": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmDescription": "100% CPU utilization is not uncommon, but sustained high usage is problematic. Consider using larger instance types or adding instances.",
+    "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+    "EvaluationPeriods": 3,
+    "MetricName": "CPUUtilization",
+    "Namespace": "AWS/ES",
+    "Period": 900,
+    "Statistic": "Average",
+    "Threshold": 80
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchResources/CPUUtilizationTooHighAlarm/Resource"
+   }
+  },
+  "OpenSearchResourcesJVMMemoryPressureTooHighAlarm07452BD8": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmDescription": "Average JVM memory pressure over last 15 minutes too high. Consider scaling vertically.",
+    "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+    "EvaluationPeriods": 1,
+    "MetricName": "JVMMemoryPressure",
+    "Namespace": "AWS/ES",
+    "Period": 900,
+    "Statistic": "Average",
+    "Threshold": 80
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchResources/JVMMemoryPressureTooHighAlarm/Resource"
+   }
+  },
+  "OpenSearchResourcesMasterCPUUtilizationTooHighAlarm78F28E4F": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmDescription": "Average CPU utilization over last 45 minutes too high. Consider using larger instance types for your dedicated master nodes.",
+    "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+    "EvaluationPeriods": 3,
+    "MetricName": "MasterCPUUtilization",
+    "Namespace": "AWS/ES",
+    "Period": 900,
+    "Statistic": "Average",
+    "Threshold": 50
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchResources/MasterCPUUtilizationTooHighAlarm/Resource"
+   }
+  },
+  "OpenSearchResourcesMasterJVMMemoryPressureTooHighAlarmDEB5CDDE": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmDescription": "Average JVM memory pressure over last 15 minutes too high. Consider scaling vertically.",
+    "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+    "EvaluationPeriods": 1,
+    "MetricName": "MasterJVMMemoryPressure",
+    "Namespace": "AWS/ES",
+    "Period": 900,
+    "Statistic": "Average",
+    "Threshold": 50
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchResources/MasterJVMMemoryPressureTooHighAlarm/Resource"
+   }
+  },
+  "LambdaOpenSearchMappingServiceRole108C4786": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/LambdaOpenSearchMapping/ServiceRole/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "using AWSLambdaBasicExecutionRole",
+       "id": "AwsSolutions-IAM4"
+      }
+     ]
+    }
+   }
+  },
+  "LambdaOpenSearchMapping74A6692A": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:6874c7df994aeacf3966af0b516dec021c52a09ab9ee56ea9566252e2e97255e"
+     }
+    },
+    "MemorySize": 128,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "LambdaOpenSearchMappingServiceRole108C4786",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "LambdaOpenSearchMappingServiceRole108C4786"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/LambdaOpenSearchMapping/Resource",
+    "aws:asset:path": "asset.6874c7df994aeacf3966af0b516dec021c52a09ab9ee56ea9566252e2e97255e",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "SetMetaDataFunctionServiceRoleFC93F9BC": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/SetMetaDataFunction/ServiceRole/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "using AWSLambdaBasicExecutionRole",
+       "id": "AwsSolutions-IAM4"
+      }
+     ]
+    }
+   }
+  },
+  "SetMetaDataFunction224423A2": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:632edcc99186080fa0fb5e49e9281790aaa0ed1dfbd4e43b152e2bdf61d66542"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "LOG_LEVEL": "ERROR"
+     }
+    },
+    "MemorySize": 128,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "SetMetaDataFunctionServiceRoleFC93F9BC",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "SetMetaDataFunctionServiceRoleFC93F9BC"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/SetMetaDataFunction/Resource",
+    "aws:asset:path": "asset.632edcc99186080fa0fb5e49e9281790aaa0ed1dfbd4e43b152e2bdf61d66542",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "OpenSearchWorkflowRoleB4058526": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": {
+         "Fn::Join": [
+          "",
+          [
+           "states.",
+           {
+            "Ref": "AWS::Region"
+           },
+           ".amazonaws.com"
+          ]
+         ]
+        }
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchWorkflow/Role/Resource"
+   }
+  },
+  "OpenSearchWorkflowRoleDefaultPolicy0B9B5583": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "DocumentSplitterDocumentSplitterFunction8D7C2CF0",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "LambdaOpenSearchMapping74A6692A",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "LambdaOpenSearchPush8560B101",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "OpenSearchWorkflowDeciderTextractDecider2E34625A",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "SetMetaDataFunction224423A2",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "TextractAsyncToJSON2TextractAsyncToJSONF8831971",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "DocumentSplitterDocumentSplitterFunction8D7C2CF0",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "LambdaOpenSearchMapping74A6692A",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "LambdaOpenSearchPush8560B101",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "OpenSearchWorkflowDeciderTextractDecider2E34625A",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "SetMetaDataFunction224423A2",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "TextractAsyncToJSON2TextractAsyncToJSONF8831971",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": "states:StartExecution",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Ref": "GenerateOpenSearchBatchStateMachineF0C39204"
+        },
+        {
+         "Ref": "TextractAsyncStateMachineCD4A0F0B"
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "OpenSearchWorkflowRoleDefaultPolicy0B9B5583",
+    "Roles": [
+     {
+      "Ref": "OpenSearchWorkflowRoleB4058526"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchWorkflow/Role/DefaultPolicy/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "limited to lambda:InvokeFunction for the Lambda functions used in the workflow",
+       "id": "AwsSolutions-IAM5"
+      }
+     ]
+    }
+   }
+  },
+  "OpenSearchWorkflow14402093": {
+   "Type": "AWS::StepFunctions::StateMachine",
+   "Properties": {
+    "DefinitionString": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"StartAt\":\"OpenSearchWorkflow-Decider\",\"States\":{\"OpenSearchWorkflow-Decider\":{\"Next\":\"DocumentSplitter\",\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2},{\"ErrorEquals\":[\"Lambda.TooManyRequestsException\",\"Lambda.Unknown\"],\"IntervalSeconds\":1,\"MaxAttempts\":10000,\"BackoffRate\":1.1}],\"Type\":\"Task\",\"TimeoutSeconds\":100,\"OutputPath\":\"$.Payload\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::lambda:invoke\",\"Parameters\":{\"FunctionName\":\"",
+       {
+        "Fn::GetAtt": [
+         "OpenSearchWorkflowDeciderTextractDecider2E34625A",
+         "Arn"
+        ]
+       },
+       "\",\"Payload.$\":\"$\"}},\"DocumentSplitter\":{\"Next\":\"Map State\",\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2},{\"ErrorEquals\":[\"Lambda.TooManyRequestsException\",\"Lambda.Unknown\"],\"IntervalSeconds\":1,\"MaxAttempts\":10000,\"BackoffRate\":1.1}],\"Type\":\"Task\",\"TimeoutSeconds\":900,\"OutputPath\":\"$.Payload\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::lambda:invoke\",\"Parameters\":{\"FunctionName\":\"",
+       {
+        "Fn::GetAtt": [
+         "DocumentSplitterDocumentSplitterFunction8D7C2CF0",
+         "Arn"
+        ]
+       },
+       "\",\"Payload.$\":\"$\"}},\"Map State\":{\"Type\":\"Map\",\"End\":true,\"Parameters\":{\"manifest\":{\"s3Path.$\":\"States.Format('s3://{}/{}/{}',                   $.documentSplitterS3OutputBucket,                   $.documentSplitterS3OutputPath,                   $$.Map.Item.Value)\"},\"mime.$\":\"$.mime\",\"originFileURI.$\":\"$.originFileURI\"},\"Iterator\":{\"StartAt\":\"TextractAsync\",\"States\":{\"TextractAsync\":{\"Next\":\"TextractAsyncToJSON2\",\"Type\":\"Task\",\"TimeoutSeconds\":86400,\"ResultPath\":\"$.textract_result\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::states:startExecution.waitForTaskToken\",\"Parameters\":{\"Input\":{\"Token.$\":\"$$.Task.Token\",\"ExecutionId.$\":\"$$.Execution.Id\",\"Payload.$\":\"$\"},\"StateMachineArn\":\"",
+       {
+        "Ref": "TextractAsyncStateMachineCD4A0F0B"
+       },
+       "\"}},\"TextractAsyncToJSON2\":{\"Next\":\"SetMetaData\",\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2},{\"ErrorEquals\":[\"Lambda.TooManyRequestsException\",\"Lambda.Unknown\"],\"IntervalSeconds\":1,\"MaxAttempts\":100,\"BackoffRate\":1.1}],\"Type\":\"Task\",\"TimeoutSeconds\":900,\"OutputPath\":\"$.Payload\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::lambda:invoke\",\"Parameters\":{\"FunctionName\":\"",
+       {
+        "Fn::GetAtt": [
+         "TextractAsyncToJSON2TextractAsyncToJSONF8831971",
+         "Arn"
+        ]
+       },
+       "\",\"Payload.$\":\"$\"}},\"SetMetaData\":{\"Next\":\"GenerateOpenSearchBatch\",\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2},{\"ErrorEquals\":[\"Lambda.TooManyRequestsException\"],\"MaxAttempts\":10000}],\"Type\":\"Task\",\"OutputPath\":\"$.Payload\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::lambda:invoke\",\"Parameters\":{\"FunctionName\":\"",
+       {
+        "Fn::GetAtt": [
+         "SetMetaDataFunction224423A2",
+         "Arn"
+        ]
+       },
+       "\",\"Payload.$\":\"$\"}},\"GenerateOpenSearchBatch\":{\"Next\":\"OpenSearchPushInvoke\",\"Type\":\"Task\",\"ResultPath\":\"$.opensearch_output_location\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::states:startExecution.waitForTaskToken\",\"Parameters\":{\"Input\":{\"Token.$\":\"$$.Task.Token\",\"ExecutionId.$\":\"$$.Execution.Id\",\"Payload.$\":\"$\"},\"StateMachineArn\":\"",
+       {
+        "Ref": "GenerateOpenSearchBatchStateMachineF0C39204"
+       },
+       "\"}},\"OpenSearchPushInvoke\":{\"Next\":\"TaskOpenSearchMapping\",\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2},{\"ErrorEquals\":[\"Lambda.TooManyRequestsException\",\"OpenSearchConnectionTimeout\"],\"MaxAttempts\":100000}],\"Type\":\"Task\",\"TimeoutSeconds\":900,\"ResultPath\":\"$.OpenSearchPush\",\"Resource\":\"",
+       {
+        "Fn::GetAtt": [
+         "LambdaOpenSearchPush8560B101",
+         "Arn"
+        ]
+       },
+       "\"},\"TaskOpenSearchMapping\":{\"End\":true,\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2},{\"ErrorEquals\":[\"Lambda.TooManyRequestsException\"],\"MaxAttempts\":100000}],\"Type\":\"Task\",\"OutputPath\":\"$.Payload\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::lambda:invoke\",\"Parameters\":{\"FunctionName\":\"",
+       {
+        "Fn::GetAtt": [
+         "LambdaOpenSearchMapping74A6692A",
+         "Arn"
+        ]
+       },
+       "\",\"Payload.$\":\"$\"}}}},\"ItemsPath\":\"$.pages\"}}}"
+      ]
+     ]
+    },
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "OpenSearchWorkflowRoleB4058526",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "OpenSearchWorkflowRoleDefaultPolicy0B9B5583",
+    "OpenSearchWorkflowRoleB4058526"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/OpenSearchWorkflow/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "no logging for StateMachine for demo",
+       "id": "AwsSolutions-SF1"
+      },
+      {
+       "reason": "no X-Ray logging for demo",
+       "id": "AwsSolutions-SF2"
+      }
+     ]
+    }
+   }
+  },
+  "ExecutionThrottleDocumentQueueDC0218C5": {
+   "Type": "AWS::SQS::Queue",
+   "Properties": {
+    "ContentBasedDeduplication": true,
+    "FifoQueue": true,
+    "MessageRetentionPeriod": 1209600
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/ExecutionThrottle/DocumentQueue/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "no DLQ required by design, DDB to show status of processing",
+       "id": "AwsSolutions-SQS3"
+      },
+      {
+       "reason": "no SSL forcing for demo",
+       "id": "AwsSolutions-SQS4"
+      }
+     ]
+    }
+   }
+  },
+  "ExecutionThrottleIDPDocumentStatusTable22DB5AEF": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "dp",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "ddi",
+      "AttributeType": "N"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "dp",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "ddi",
+      "KeyType": "RANGE"
+     }
+    ]
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/ExecutionThrottle/IDPDocumentStatusTable/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "no DDB point in time recovery for demo",
+       "id": "AwsSolutions-DDB3"
+      }
+     ]
+    }
+   }
+  },
+  "ExecutionThrottleIDPExecutionsCounterTableFD3A37DA": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "n",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "n",
+      "KeyType": "HASH"
+     }
+    ]
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/ExecutionThrottle/IDPExecutionsCounterTable/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "no DDB point in time recovery for demo",
+       "id": "AwsSolutions-DDB3"
+      }
+     ]
+    }
+   }
+  },
+  "ExecutionThrottleExecutionsStartThrottleServiceRoleB8FA6287": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/ExecutionThrottle/ExecutionsStartThrottle/ServiceRole/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "using AWSLambdaBasicExecutionRole",
+       "id": "AwsSolutions-IAM4"
+      }
+     ]
+    }
+   }
+  },
+  "ExecutionThrottleExecutionsStartThrottleServiceRoleDefaultPolicyAEE08680": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "states:StartExecution",
+       "Effect": "Allow",
+       "Resource": {
+        "Ref": "OpenSearchWorkflow14402093"
+       }
+      },
+      {
+       "Action": "sqs:SendMessage",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "ExecutionThrottleDocumentQueueDC0218C5",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "ExecutionThrottleIDPDocumentStatusTable22DB5AEF",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "ExecutionThrottleIDPExecutionsCounterTableFD3A37DA",
+          "Arn"
+         ]
+        }
+       ]
+      },
+      {
+       "Action": "s3:GetObject",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "OpenSearchWorkflowBucket68E8053E"
+           },
+           "/*"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "OpenSearchWorkflowBucket68E8053E"
+           },
+           "/uploads/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": "s3:ListBucket",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:s3:::",
+          {
+           "Ref": "OpenSearchWorkflowBucket68E8053E"
+          }
+         ]
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ExecutionThrottleExecutionsStartThrottleServiceRoleDefaultPolicyAEE08680",
+    "Roles": [
+     {
+      "Ref": "ExecutionThrottleExecutionsStartThrottleServiceRoleB8FA6287"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/ExecutionThrottle/ExecutionsStartThrottle/ServiceRole/DefaultPolicy/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "wildcard permission is for everything under prefix",
+       "id": "AwsSolutions-IAM5"
+      }
+     ]
+    }
+   }
+  },
+  "ExecutionThrottleExecutionsStartThrottle3E0BC122": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:a32c14ec18cd7b73c4034bf3b13bf8bd6403b83eab86eedd1ab7373f37069438"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "LOG_LEVEL": "ERROR",
+      "STATE_MACHINE_ARN": {
+       "Ref": "OpenSearchWorkflow14402093"
+      },
+      "EXECUTIONS_THRESHOLD": "550",
+      "DOCUMENT_STATUS_TABLE": {
+       "Ref": "ExecutionThrottleIDPDocumentStatusTable22DB5AEF"
+      },
+      "EXECUTIONS_COUNTER_TABLE": {
+       "Ref": "ExecutionThrottleIDPExecutionsCounterTableFD3A37DA"
+      },
+      "DOCUMENT_QUEUE_URL": {
+       "Ref": "ExecutionThrottleDocumentQueueDC0218C5"
+      }
+     }
+    },
+    "MemorySize": 512,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "ExecutionThrottleExecutionsStartThrottleServiceRoleB8FA6287",
+      "Arn"
+     ]
+    },
+    "Timeout": 300
+   },
+   "DependsOn": [
+    "ExecutionThrottleExecutionsStartThrottleServiceRoleDefaultPolicyAEE08680",
+    "ExecutionThrottleExecutionsStartThrottleServiceRoleB8FA6287"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/ExecutionThrottle/ExecutionsStartThrottle/Resource",
+    "aws:asset:path": "asset.a32c14ec18cd7b73c4034bf3b13bf8bd6403b83eab86eedd1ab7373f37069438",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "ExecutionThrottleExecutionsQueueWorkerServiceRole176DF06D": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/ExecutionThrottle/ExecutionsQueueWorker/ServiceRole/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "using AWSLambdaBasicExecutionRole",
+       "id": "AwsSolutions-IAM4"
+      }
+     ]
+    }
+   }
+  },
+  "ExecutionThrottleExecutionsQueueWorkerServiceRoleDefaultPolicy97822875": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "states:StartExecution",
+       "Effect": "Allow",
+       "Resource": {
+        "Ref": "OpenSearchWorkflow14402093"
+       }
+      },
+      {
+       "Action": [
+        "sqs:DeleteMessage",
+        "sqs:ReceiveMessage"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "ExecutionThrottleDocumentQueueDC0218C5",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "ExecutionThrottleIDPDocumentStatusTable22DB5AEF",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "ExecutionThrottleIDPExecutionsCounterTableFD3A37DA",
+          "Arn"
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ExecutionThrottleExecutionsQueueWorkerServiceRoleDefaultPolicy97822875",
+    "Roles": [
+     {
+      "Ref": "ExecutionThrottleExecutionsQueueWorkerServiceRole176DF06D"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/ExecutionThrottle/ExecutionsQueueWorker/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "ExecutionThrottleExecutionsQueueWorkerC5A17A95": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:0730bbf626873f49d73760b9004cb763d830899d40d61d11e577991925451e88"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "LOG_LEVEL": "DEBUG",
+      "STATE_MACHINE_ARN": {
+       "Ref": "OpenSearchWorkflow14402093"
+      },
+      "EXECUTIONS_THRESHOLD": "550",
+      "SQS_BATCH": "10",
+      "DOCUMENT_STATUS_TABLE": {
+       "Ref": "ExecutionThrottleIDPDocumentStatusTable22DB5AEF"
+      },
+      "EXECUTIONS_COUNTER_TABLE": {
+       "Ref": "ExecutionThrottleIDPExecutionsCounterTableFD3A37DA"
+      },
+      "DOCUMENT_QUEUE_URL": {
+       "Ref": "ExecutionThrottleDocumentQueueDC0218C5"
+      }
+     }
+    },
+    "MemorySize": 512,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "ExecutionThrottleExecutionsQueueWorkerServiceRole176DF06D",
+      "Arn"
+     ]
+    },
+    "Timeout": 300
+   },
+   "DependsOn": [
+    "ExecutionThrottleExecutionsQueueWorkerServiceRoleDefaultPolicy97822875",
+    "ExecutionThrottleExecutionsQueueWorkerServiceRole176DF06D"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/ExecutionThrottle/ExecutionsQueueWorker/Resource",
+    "aws:asset:path": "asset.0730bbf626873f49d73760b9004cb763d830899d40d61d11e577991925451e88",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "ExecutionThrottleExecutionsThrottleCounterResetServiceRole6B033FE8": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/ExecutionThrottle/ExecutionsThrottleCounterReset/ServiceRole/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "using AWSLambdaBasicExecutionRole",
+       "id": "AwsSolutions-IAM4"
+      }
+     ]
+    }
+   }
+  },
+  "ExecutionThrottleExecutionsThrottleCounterResetServiceRoleDefaultPolicy5BBA4A45": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "states:ListExecutions",
+       "Effect": "Allow",
+       "Resource": {
+        "Ref": "OpenSearchWorkflow14402093"
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "ExecutionThrottleIDPExecutionsCounterTableFD3A37DA",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ExecutionThrottleExecutionsThrottleCounterResetServiceRoleDefaultPolicy5BBA4A45",
+    "Roles": [
+     {
+      "Ref": "ExecutionThrottleExecutionsThrottleCounterResetServiceRole6B033FE8"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/ExecutionThrottle/ExecutionsThrottleCounterReset/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "ExecutionThrottleExecutionsThrottleCounterReset6E1D0969": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:86cae4a88aad36acb36b59a2f5766087ace07001398342f20e0c934d192eaf67"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "LOG_LEVEL": "DEBUG",
+      "STATE_MACHINE_ARN": {
+       "Ref": "OpenSearchWorkflow14402093"
+      },
+      "EXECUTIONS_COUNTER_TABLE": {
+       "Ref": "ExecutionThrottleIDPExecutionsCounterTableFD3A37DA"
+      }
+     }
+    },
+    "MemorySize": 128,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "ExecutionThrottleExecutionsThrottleCounterResetServiceRole6B033FE8",
+      "Arn"
+     ]
+    },
+    "Timeout": 900
+   },
+   "DependsOn": [
+    "ExecutionThrottleExecutionsThrottleCounterResetServiceRoleDefaultPolicy5BBA4A45",
+    "ExecutionThrottleExecutionsThrottleCounterResetServiceRole6B033FE8"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/ExecutionThrottle/ExecutionsThrottleCounterReset/Resource",
+    "aws:asset:path": "asset.86cae4a88aad36acb36b59a2f5766087ace07001398342f20e0c934d192eaf67",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "ExecutionThrottleRuleB33B36E0": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "ScheduleExpression": "rate(1 minute)",
+    "State": "ENABLED",
+    "Targets": [
+     {
+      "Arn": {
+       "Fn::GetAtt": [
+        "ExecutionThrottleExecutionsQueueWorkerC5A17A95",
+        "Arn"
+       ]
+      },
+      "Id": "Target0"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/ExecutionThrottle/Rule/Resource"
+   }
+  },
+  "ExecutionThrottleRuleAllowEventRuleOpenSearchWorkflowExecutionThrottleExecutionsQueueWorker6471A3CEA292DC69": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ExecutionThrottleExecutionsQueueWorkerC5A17A95",
+      "Arn"
+     ]
+    },
+    "Principal": "events.amazonaws.com",
+    "SourceArn": {
+     "Fn::GetAtt": [
+      "ExecutionThrottleRuleB33B36E0",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/ExecutionThrottle/Rule/AllowEventRuleOpenSearchWorkflowExecutionThrottleExecutionsQueueWorker6471A3CE"
+   }
+  },
+  "ExecutionThrottleStateChange773D197A": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "EventPattern": {
+     "source": [
+      "aws.states"
+     ],
+     "detail-type": [
+      "Step Functions Execution Status Change"
+     ],
+     "detail": {
+      "status": [
+       "SUCCEEDED",
+       "FAILED",
+       "TIMED_OUT",
+       "ABORTED"
+      ],
+      "stateMachineArn": [
+       {
+        "Ref": "OpenSearchWorkflow14402093"
+       }
+      ]
+     }
+    },
+    "State": "ENABLED",
+    "Targets": [
+     {
+      "Arn": {
+       "Fn::GetAtt": [
+        "ExecutionThrottleExecutionsQueueWorkerC5A17A95",
+        "Arn"
+       ]
+      },
+      "Id": "Target0"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/ExecutionThrottle/StateChange/Resource"
+   }
+  },
+  "ExecutionThrottleStateChangeAllowEventRuleOpenSearchWorkflowExecutionThrottleExecutionsQueueWorker6471A3CEA8F13950": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ExecutionThrottleExecutionsQueueWorkerC5A17A95",
+      "Arn"
+     ]
+    },
+    "Principal": "events.amazonaws.com",
+    "SourceArn": {
+     "Fn::GetAtt": [
+      "ExecutionThrottleStateChange773D197A",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/ExecutionThrottle/StateChange/AllowEventRuleOpenSearchWorkflowExecutionThrottleExecutionsQueueWorker6471A3CE"
+   }
+  },
+  "ExecutionThrottleRuleExecutionsThrottleCounterResetA62EC2C4": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "ScheduleExpression": "rate(5 minutes)",
+    "State": "ENABLED",
+    "Targets": [
+     {
+      "Arn": {
+       "Fn::GetAtt": [
+        "ExecutionThrottleExecutionsThrottleCounterReset6E1D0969",
+        "Arn"
+       ]
+      },
+      "Id": "Target0"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/ExecutionThrottle/RuleExecutionsThrottleCounterReset/Resource"
+   }
+  },
+  "ExecutionThrottleRuleExecutionsThrottleCounterResetAllowEventRuleOpenSearchWorkflowExecutionThrottleExecutionsThrottleCounterReset0EDC22731BF52E0F": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "ExecutionThrottleExecutionsThrottleCounterReset6E1D0969",
+      "Arn"
+     ]
+    },
+    "Principal": "events.amazonaws.com",
+    "SourceArn": {
+     "Fn::GetAtt": [
+      "ExecutionThrottleRuleExecutionsThrottleCounterResetA62EC2C4",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/ExecutionThrottle/RuleExecutionsThrottleCounterReset/AllowEventRuleOpenSearchWorkflowExecutionThrottleExecutionsThrottleCounterReset0EDC2273"
+   }
+  },
+  "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/Resource"
+   }
+  },
+  "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "s3:PutBucketNotification",
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36",
+    "Roles": [
+     {
+      "Ref": "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/DefaultPolicy/Resource"
+   }
+  },
+  "BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Description": "AWS CloudFormation handler for \"Custom::S3BucketNotifications\" resources (@aws-cdk/aws-s3)",
+    "Code": {
+     "ZipFile": "import boto3  # type: ignore\nimport json\nimport logging\nimport urllib.request\n\ns3 = boto3.client(\"s3\")\n\nEVENTBRIDGE_CONFIGURATION = 'EventBridgeConfiguration'\n\nCONFIGURATION_TYPES = [\"TopicConfigurations\", \"QueueConfigurations\", \"LambdaFunctionConfigurations\"]\n\ndef handler(event: dict, context):\n  response_status = \"SUCCESS\"\n  error_message = \"\"\n  try:\n    props = event[\"ResourceProperties\"]\n    bucket = props[\"BucketName\"]\n    notification_configuration = props[\"NotificationConfiguration\"]\n    request_type = event[\"RequestType\"]\n    managed = props.get('Managed', 'true').lower() == 'true'\n    stack_id = event['StackId']\n\n    if managed:\n      config = handle_managed(request_type, notification_configuration)\n    else:\n      config = handle_unmanaged(bucket, stack_id, request_type, notification_configuration)\n\n    put_bucket_notification_configuration(bucket, config)\n  except Exception as e:\n    logging.exception(\"Failed to put bucket notification configuration\")\n    response_status = \"FAILED\"\n    error_message = f\"Error: {str(e)}. \"\n  finally:\n    submit_response(event, context, response_status, error_message)\n\ndef handle_managed(request_type, notification_configuration):\n  if request_type == 'Delete':\n    return {}\n  return notification_configuration\n\ndef handle_unmanaged(bucket, stack_id, request_type, notification_configuration):\n  external_notifications = find_external_notifications(bucket, stack_id)\n\n  if request_type == 'Delete':\n    return external_notifications\n\n  def with_id(notification):\n    notification['Id'] = f\"{stack_id}-{hash(json.dumps(notification, sort_keys=True))}\"\n    return notification\n\n  notifications = {}\n  for t in CONFIGURATION_TYPES:\n    external = external_notifications.get(t, [])\n    incoming = [with_id(n) for n in notification_configuration.get(t, [])]\n    notifications[t] = external + incoming\n\n  if EVENTBRIDGE_CONFIGURATION in notification_configuration:\n    notifications[EVENTBRIDGE_CONFIGURATION] = notification_configuration[EVENTBRIDGE_CONFIGURATION]\n  elif EVENTBRIDGE_CONFIGURATION in external_notifications:\n    notifications[EVENTBRIDGE_CONFIGURATION] = external_notifications[EVENTBRIDGE_CONFIGURATION]\n\n  return notifications\n\ndef find_external_notifications(bucket, stack_id):\n  existing_notifications = get_bucket_notification_configuration(bucket)\n  external_notifications = {}\n  for t in CONFIGURATION_TYPES:\n    external_notifications[t] = [n for n in existing_notifications.get(t, []) if not n['Id'].startswith(f\"{stack_id}-\")]\n\n  if EVENTBRIDGE_CONFIGURATION in existing_notifications:\n    external_notifications[EVENTBRIDGE_CONFIGURATION] = existing_notifications[EVENTBRIDGE_CONFIGURATION]\n\n  return external_notifications\n\ndef get_bucket_notification_configuration(bucket):\n  return s3.get_bucket_notification_configuration(Bucket=bucket)\n\ndef put_bucket_notification_configuration(bucket, notification_configuration):\n  s3.put_bucket_notification_configuration(Bucket=bucket, NotificationConfiguration=notification_configuration)\n\ndef submit_response(event: dict, context, response_status: str, error_message: str):\n  response_body = json.dumps(\n    {\n      \"Status\": response_status,\n      \"Reason\": f\"{error_message}See the details in CloudWatch Log Stream: {context.log_stream_name}\",\n      \"PhysicalResourceId\": event.get(\"PhysicalResourceId\") or event[\"LogicalResourceId\"],\n      \"StackId\": event[\"StackId\"],\n      \"RequestId\": event[\"RequestId\"],\n      \"LogicalResourceId\": event[\"LogicalResourceId\"],\n      \"NoEcho\": False,\n    }\n  ).encode(\"utf-8\")\n  headers = {\"content-type\": \"\", \"content-length\": str(len(response_body))}\n  try:\n    req = urllib.request.Request(url=event[\"ResponseURL\"], headers=headers, data=response_body, method=\"PUT\")\n    with urllib.request.urlopen(req) as response:\n      print(response.read().decode(\"utf-8\"))\n    print(\"Status code: \" + response.reason)\n  except Exception as e:\n      print(\"send(..) failed executing request.urlopen(..): \" + str(e))\n"
+    },
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.9",
+    "Timeout": 300
+   },
+   "DependsOn": [
+    "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36",
+    "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/11STW/bMAz9Lb3L6roAG3pbmmJAgBXNku4cKDIba5ZET5RSGIb/+yjZadJexMfHb1Jf5XB/J7/cqDeqdN1W1hzksItKt4Kp/UALOTwk3UIUq1c/o0ls0BrdX+hJH4VV7lArObBhA8EZIoNePCL7hLVTR/iZvI6ZY48zHoVRTg5btJDpIi8FzqlBh70igkjyKt8yM9kmt9AhmYihf1AEgiJ0r3MB2kdFLclfpbu1P2ELou69cljzyC/qMFUuYBTkiUnsjC5kAbt0IB1Md+79Wh8/Fis7jPCkdGN8yftBf1LdKDQePfcqhz8EYYNos9s7PoOVNeDjtenCrGsGJvafgx/RKeM/e+SdLiOftnFMjgI78AQq6IbDTkaD5IA5VFtM9ZuKupHD0qrgcrICeNB/PN7vBKnMVQBf5sQ5md+m+YAsx7EgIExBg3gH5V68j6Pxx+zxnGKXykAr9LWZ1rm451/5I39LQpvKUivNTwxJR7rNhumjVZc55uO+4DNTu0KNYtPHBv3tQn6Xd99u/pIxVUi8FAdyO8n/3YQT9wQDAAA="
+   },
+   "Metadata": {
+    "aws:cdk:path": "OpenSearchWorkflow/CDKMetadata/Default"
+   },
+   "Condition": "CDKMetadataAvailable"
+  }
+ },
+ "Outputs": {
+  "DocumentUploadLocation": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "s3://",
+      {
+       "Ref": "OpenSearchWorkflowBucket68E8053E"
+      },
+      "/uploads/"
+     ]
+    ]
+   },
+   "Export": {
+    "Name": {
+     "Fn::Join": [
+      "",
+      [
+       {
+        "Ref": "AWS::StackName"
+       },
+       "-DocumentUploadLocation"
+      ]
+     ]
+    }
+   }
+  },
+  "StepFunctionFlowLink": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Ref": "AWS::Region"
+      },
+      ".console.aws.amazon.com/states/home?region=",
+      {
+       "Ref": "AWS::Region"
+      },
+      "#/statemachines/view/",
+      {
+       "Ref": "OpenSearchWorkflow14402093"
+      }
+     ]
+    ]
+   }
+  },
+  "DocumentQueueLink": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Ref": "AWS::Region"
+      },
+      ".console.aws.amazon.com/sqs/v2/home?region=",
+      {
+       "Ref": "AWS::Region"
+      },
+      "#/queues/",
+      {
+       "Fn::Join": [
+        "%2F",
+        {
+         "Fn::Split": [
+          "/",
+          {
+           "Fn::Join": [
+            "%3A",
+            {
+             "Fn::Split": [
+              ":",
+              {
+               "Ref": "ExecutionThrottleDocumentQueueDC0218C5"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    ]
+   }
+  },
+  "OpenSearchDashboard": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Fn::GetAtt": [
+        "OpenSearchResourcesOpenSearchDomain725BF176",
+        "DomainEndpoint"
+       ]
+      },
+      "/_dashboards"
+     ]
+    ]
+   }
+  },
+  "OpenSearchLink": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Ref": "AWS::Region"
+      },
+      ".console.aws.amazon.com/aos/home?region=",
+      {
+       "Ref": "AWS::Region"
+      },
+      "#/opensearch/domains/idp-cdk-opensearch"
+     ]
+    ]
+   }
+  },
+  "CognitoUserPoolLink": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Ref": "AWS::Region"
+      },
+      ".console.aws.amazon.com/cognito/v2/idp/user-pools/",
+      {
+       "Ref": "OpenSearchResourcesCognitoUserPoolEB6B5775"
+      },
+      "/users?region=",
+      {
+       "Ref": "AWS::Region"
+      }
+     ]
+    ]
+   }
+  }
+ },
+ "Conditions": {
+  "CDKMetadataAvailable": {
+   "Fn::Or": [
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "af-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ca-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-northwest-1"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-3"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "me-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "sa-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-2"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-west-2"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

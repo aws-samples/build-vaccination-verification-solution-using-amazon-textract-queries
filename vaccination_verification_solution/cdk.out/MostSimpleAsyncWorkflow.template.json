@@ -1,0 +1,1805 @@
+{
+ "Description": "IDP CDK constructs sample for a very simple Textract asynchronous IDP process (SO9217)",
+ "Resources": {
+  "TextractSimpleAsyncWorkflow2D7D5B8D": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "Tags": [
+     {
+      "Key": "aws-cdk:auto-delete-objects",
+      "Value": "true"
+     }
+    ]
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractSimpleAsyncWorkflow/Resource"
+   }
+  },
+  "TextractSimpleAsyncWorkflowPolicyDEA557C5": {
+   "Type": "AWS::S3::BucketPolicy",
+   "Properties": {
+    "Bucket": {
+     "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+    },
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:DeleteObject*",
+        "s3:GetBucket*",
+        "s3:List*"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": {
+         "Fn::GetAtt": [
+          "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+          "Arn"
+         ]
+        }
+       },
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "TextractSimpleAsyncWorkflow2D7D5B8D",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "TextractSimpleAsyncWorkflow2D7D5B8D",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractSimpleAsyncWorkflow/Policy/Resource"
+   }
+  },
+  "TextractSimpleAsyncWorkflowAutoDeleteObjectsCustomResourceA0A53394": {
+   "Type": "Custom::S3AutoDeleteObjects",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+      "Arn"
+     ]
+    },
+    "BucketName": {
+     "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+    }
+   },
+   "DependsOn": [
+    "TextractSimpleAsyncWorkflowPolicyDEA557C5"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractSimpleAsyncWorkflow/AutoDeleteObjectsCustomResource/Default"
+   }
+  },
+  "TextractSimpleAsyncWorkflowNotificationsC6B74026": {
+   "Type": "Custom::S3BucketNotifications",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691",
+      "Arn"
+     ]
+    },
+    "BucketName": {
+     "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+    },
+    "NotificationConfiguration": {
+     "LambdaFunctionConfigurations": [
+      {
+       "Events": [
+        "s3:ObjectCreated:*"
+       ],
+       "Filter": {
+        "Key": {
+         "FilterRules": [
+          {
+           "Name": "prefix",
+           "Value": "uploads"
+          }
+         ]
+        }
+       },
+       "LambdaFunctionArn": {
+        "Fn::GetAtt": [
+         "LambdaStartStepFunctionGeneric9A1E8F24",
+         "Arn"
+        ]
+       }
+      }
+     ]
+    },
+    "Managed": true
+   },
+   "DependsOn": [
+    "TextractSimpleAsyncWorkflowAllowBucketNotificationsToMostSimpleAsyncWorkflowLambdaStartStepFunctionGeneric869EA81E90B39EBD"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractSimpleAsyncWorkflow/Notifications/Resource"
+   }
+  },
+  "TextractSimpleAsyncWorkflowAllowBucketNotificationsToMostSimpleAsyncWorkflowLambdaStartStepFunctionGeneric869EA81E90B39EBD": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "LambdaStartStepFunctionGeneric9A1E8F24",
+      "Arn"
+     ]
+    },
+    "Principal": "s3.amazonaws.com",
+    "SourceAccount": {
+     "Ref": "AWS::AccountId"
+    },
+    "SourceArn": {
+     "Fn::GetAtt": [
+      "TextractSimpleAsyncWorkflow2D7D5B8D",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractSimpleAsyncWorkflow/AllowBucketNotificationsToMostSimpleAsyncWorkflowLambdaStartStepFunctionGeneric869EA81E"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "a657308e723bb9460b800cb3b47dadb74e28243edfe246bf7755c45ec312eb97.zip"
+    },
+    "Timeout": 900,
+    "MemorySize": 128,
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs18.x",
+    "Description": {
+     "Fn::Join": [
+      "",
+      [
+       "Lambda function for auto-deleting objects in ",
+       {
+        "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+       },
+       " S3 bucket."
+      ]
+     ]
+    }
+   },
+   "DependsOn": [
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler",
+    "aws:asset:path": "asset.a657308e723bb9460b800cb3b47dadb74e28243edfe246bf7755c45ec312eb97",
+    "aws:asset:property": "Code"
+   }
+  },
+  "TextractAsyncTextractTaskTokenTableC036FA29": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "ID",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "ID",
+      "KeyType": "HASH"
+     }
+    ],
+    "TimeToLiveSpecification": {
+     "AttributeName": "ttltimestamp",
+     "Enabled": true
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/TextractTaskTokenTable/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSRole3D20F3D6": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "textract.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/AmazonSQSFullAccess"
+       ]
+      ]
+     },
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/AmazonSNSFullAccess"
+       ]
+      ]
+     },
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/AmazonS3ReadOnlyAccess"
+       ]
+      ]
+     },
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/AmazonTextractFullAccess"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/TextractAsyncSNSRole/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSBB89DC08": {
+   "Type": "AWS::SNS::Topic",
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/TextractAsyncSNS/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncCallServiceRole5AD11AEF": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/TextractAsyncCall/ServiceRole/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncCallServiceRoleDefaultPolicy458B5442": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:GetObject",
+        "s3:ListBucket",
+        "states:SendTaskFailure",
+        "textract:Get*",
+        "textract:Start*"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      },
+      {
+       "Action": "s3:PutObject",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+           },
+           "/textract-temp-output/"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+           },
+           "/textract-temp-output/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "TextractAsyncTextractTaskTokenTableC036FA29",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TextractAsyncTextractAsyncCallServiceRoleDefaultPolicy458B5442",
+    "Roles": [
+     {
+      "Ref": "TextractAsyncTextractAsyncCallServiceRole5AD11AEF"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/TextractAsyncCall/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncCall644804C6": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:d52863a8a715725aea86e462bd1b6e554c84642dd1171d335cc7205622c342d1"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "NOTIFICATION_SNS": {
+       "Ref": "TextractAsyncTextractAsyncSNSBB89DC08"
+      },
+      "NOTIFICATION_ROLE_ARN": {
+       "Fn::GetAtt": [
+        "TextractAsyncTextractAsyncSNSRole3D20F3D6",
+        "Arn"
+       ]
+      },
+      "TOKEN_STORE_DDB": {
+       "Ref": "TextractAsyncTextractTaskTokenTableC036FA29"
+      },
+      "S3_OUTPUT_BUCKET": {
+       "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+      },
+      "S3_TEMP_OUTPUT_PREFIX": "textract-temp-output",
+      "LOG_LEVEL": "DEBUG",
+      "TEXTRACT_API": "GENERIC"
+     }
+    },
+    "MemorySize": 2048,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncCallServiceRole5AD11AEF",
+      "Arn"
+     ]
+    },
+    "Timeout": 900
+   },
+   "DependsOn": [
+    "TextractAsyncTextractAsyncCallServiceRoleDefaultPolicy458B5442",
+    "TextractAsyncTextractAsyncCallServiceRole5AD11AEF"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/TextractAsyncCall/Resource",
+    "aws:asset:path": "asset.d52863a8a715725aea86e462bd1b6e554c84642dd1171d335cc7205622c342d1",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "TextractAsyncTextractAsyncCallLogRetention08EF170A": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "TextractAsyncTextractAsyncCall644804C6"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/TextractAsyncCall/LogRetention/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionServiceRole33A95889": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/TextractAsyncSNSFunction/ServiceRole/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionServiceRoleDefaultPolicyAD3C2896": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "dynamodb:GetItem",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "TextractAsyncTextractTaskTokenTableC036FA29",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "states:SendTaskFailure",
+        "states:SendTaskSuccess"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TextractAsyncTextractAsyncSNSFunctionServiceRoleDefaultPolicyAD3C2896",
+    "Roles": [
+     {
+      "Ref": "TextractAsyncTextractAsyncSNSFunctionServiceRole33A95889"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/TextractAsyncSNSFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionFDB63B51": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:bb5b52a2747496721293f581a5e4f818e69024d4f98085f9f0bc94865c37b01c"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "TOKEN_STORE_DDB": {
+       "Ref": "TextractAsyncTextractTaskTokenTableC036FA29"
+      },
+      "S3_OUTPUT_BUCKET": {
+       "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+      },
+      "S3_TEMP_OUTPUT_PREFIX": "textract-temp-output",
+      "TEXTRACT_API": "GENERIC",
+      "LOG_LEVEL": "DEBUG"
+     }
+    },
+    "MemorySize": 128,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncSNSFunctionServiceRole33A95889",
+      "Arn"
+     ]
+    },
+    "Timeout": 900
+   },
+   "DependsOn": [
+    "TextractAsyncTextractAsyncSNSFunctionServiceRoleDefaultPolicyAD3C2896",
+    "TextractAsyncTextractAsyncSNSFunctionServiceRole33A95889"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/TextractAsyncSNSFunction/Resource",
+    "aws:asset:path": "asset.bb5b52a2747496721293f581a5e4f818e69024d4f98085f9f0bc94865c37b01c",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionAllowInvokeMostSimpleAsyncWorkflowTextractAsyncTextractAsyncSNSE5B31E9E0CCAAB17": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncSNSFunctionFDB63B51",
+      "Arn"
+     ]
+    },
+    "Principal": "sns.amazonaws.com",
+    "SourceArn": {
+     "Ref": "TextractAsyncTextractAsyncSNSBB89DC08"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/TextractAsyncSNSFunction/AllowInvoke:MostSimpleAsyncWorkflowTextractAsyncTextractAsyncSNSE5B31E9E"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionTextractAsyncSNS0BE323B1": {
+   "Type": "AWS::SNS::Subscription",
+   "Properties": {
+    "Endpoint": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncSNSFunctionFDB63B51",
+      "Arn"
+     ]
+    },
+    "Protocol": "lambda",
+    "TopicArn": {
+     "Ref": "TextractAsyncTextractAsyncSNSBB89DC08"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/TextractAsyncSNSFunction/TextractAsyncSNS/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionLogRetention2F7D3C68": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "TextractAsyncTextractAsyncSNSFunctionFDB63B51"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/TextractAsyncSNSFunction/LogRetention/Resource"
+   }
+  },
+  "TextractAsyncStateMachineRoleDF5BF968": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": {
+         "Fn::Join": [
+          "",
+          [
+           "states.",
+           {
+            "Ref": "AWS::Region"
+           },
+           ".amazonaws.com"
+          ]
+         ]
+        }
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/StateMachine/Role/Resource"
+   }
+  },
+  "TextractAsyncStateMachineRoleDefaultPolicy042AFF96": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "TextractAsyncTextractAsyncCall644804C6",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "TextractAsyncTextractAsyncCall644804C6",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TextractAsyncStateMachineRoleDefaultPolicy042AFF96",
+    "Roles": [
+     {
+      "Ref": "TextractAsyncStateMachineRoleDF5BF968"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/StateMachine/Role/DefaultPolicy/Resource"
+   }
+  },
+  "TextractAsyncStateMachineCD4A0F0B": {
+   "Type": "AWS::StepFunctions::StateMachine",
+   "Properties": {
+    "DefinitionString": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"StartAt\":\"TextractAsyncCallTask\",\"States\":{\"TextractAsyncCallTask\":{\"End\":true,\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2},{\"ErrorEquals\":[\"ThrottlingException\",\"LimitExceededException\",\"InternalServerError\",\"ProvisionedThroughputExceededException\",\"Lambda.TooManyRequestsException\",\"ConnectionClosedException\",\"Lambda.Unknown\"],\"IntervalSeconds\":1,\"MaxAttempts\":100,\"BackoffRate\":1.1}],\"Type\":\"Task\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::lambda:invoke\",\"Parameters\":{\"FunctionName\":\"",
+       {
+        "Fn::GetAtt": [
+         "TextractAsyncTextractAsyncCall644804C6",
+         "Arn"
+        ]
+       },
+       "\",\"Payload.$\":\"$\"}}},\"TimeoutSeconds\":10368000}"
+      ]
+     ]
+    },
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "TextractAsyncStateMachineRoleDF5BF968",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "TextractAsyncStateMachineRoleDefaultPolicy042AFF96",
+    "TextractAsyncStateMachineRoleDF5BF968"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/StateMachine/Resource"
+   }
+  },
+  "TextractAsyncundefinedDurationFilter387A8BB4": {
+   "Type": "AWS::Logs::MetricFilter",
+   "Properties": {
+    "FilterPattern": "[INFO, timestamp, id, message = \"textract_async_GENERIC_job_duration_in_ms:\", durationMs]",
+    "LogGroupName": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncSNSFunctionLogRetention2F7D3C68",
+      "LogGroupName"
+     ]
+    },
+    "MetricTransformations": [
+     {
+      "MetricName": "Duration",
+      "MetricNamespace": "TextractConstructGenericAsync",
+      "MetricValue": "$durationMs"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/undefined-DurationFilter/Resource"
+   }
+  },
+  "TextractAsyncundefinedJobFailureFilter52CCD666": {
+   "Type": "AWS::Logs::MetricFilter",
+   "Properties": {
+    "FilterPattern": "[INFO, timestamp, id, message = \"textract_async_GENERIC_failed_job\", durationMs]",
+    "LogGroupName": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncSNSFunctionLogRetention2F7D3C68",
+      "LogGroupName"
+     ]
+    },
+    "MetricTransformations": [
+     {
+      "MetricName": "JobFailure",
+      "MetricNamespace": "TextractConstructGenericAsync",
+      "MetricValue": "1"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/undefined-JobFailureFilter/Resource"
+   }
+  },
+  "TextractAsyncundefinedNumberPagesFilterA656B85F": {
+   "Type": "AWS::Logs::MetricFilter",
+   "Properties": {
+    "FilterPattern": "[INFO, timestamp, id, message = \"textract_async_GENERIC_number_of_pages_processed:\", pages]",
+    "LogGroupName": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncSNSFunctionLogRetention2F7D3C68",
+      "LogGroupName"
+     ]
+    },
+    "MetricTransformations": [
+     {
+      "MetricName": "NumberPagesProcessed",
+      "MetricNamespace": "TextractConstructGenericAsync",
+      "MetricValue": "$pages"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/undefined-NumberPagesFilter/Resource"
+   }
+  },
+  "TextractAsyncundefinedJobsFinishedFilter82D75988": {
+   "Type": "AWS::Logs::MetricFilter",
+   "Properties": {
+    "FilterPattern": "[INFO, timestamp, id, message = \"textract_async_GENERIC_number_of_pages_processed:\", pages]",
+    "LogGroupName": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncSNSFunctionLogRetention2F7D3C68",
+      "LogGroupName"
+     ]
+    },
+    "MetricTransformations": [
+     {
+      "MetricName": "JobsFinished",
+      "MetricNamespace": "TextractConstructGenericAsync",
+      "MetricValue": "1"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/undefined-JobsFinishedFilter/Resource"
+   }
+  },
+  "TextractAsyncundefinedJobsStartedFilterC4D7D80A": {
+   "Type": "AWS::Logs::MetricFilter",
+   "Properties": {
+    "FilterPattern": "[INFO, timestamp, id, message = \"textract_async_GENERIC_job_started\"]",
+    "LogGroupName": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncCallLogRetention08EF170A",
+      "LogGroupName"
+     ]
+    },
+    "MetricTransformations": [
+     {
+      "MetricName": "JobsStarted",
+      "MetricNamespace": "TextractConstructGenericAsync",
+      "MetricValue": "1"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/undefined-JobsStartedFilter/Resource"
+   }
+  },
+  "TextractAsyncundefinedNumberPagesSendFilter9D30AD69": {
+   "Type": "AWS::Logs::MetricFilter",
+   "Properties": {
+    "FilterPattern": "[INFO, timestamp, id, message = \"textract_async_GENERIC_number_of_pages_send_to_process:\", pages]",
+    "LogGroupName": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncCallLogRetention08EF170A",
+      "LogGroupName"
+     ]
+    },
+    "MetricTransformations": [
+     {
+      "MetricName": "NumberPagesSend",
+      "MetricNamespace": "TextractConstructGenericAsync",
+      "MetricValue": "$pages"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/undefined-NumberPagesSendFilter/Resource"
+   }
+  },
+  "TextractAsyncundefinedErrorFilter83C16E6D": {
+   "Type": "AWS::Logs::MetricFilter",
+   "Properties": {
+    "FilterPattern": "?\"ERROR\" ?\"Error\" ?\"error\"",
+    "LogGroupName": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncCallLogRetention08EF170A",
+      "LogGroupName"
+     ]
+    },
+    "MetricTransformations": [
+     {
+      "MetricName": "Errors",
+      "MetricNamespace": "TextractConstructGenericAsync",
+      "MetricValue": "1"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/undefined-ErrorFilter/Resource"
+   }
+  },
+  "TextractAsyncundefinedlimitExceededExceptionFilter2CBD5D5E": {
+   "Type": "AWS::Logs::MetricFilter",
+   "Properties": {
+    "FilterPattern": "\"textract.exceptions.LimitExceededException\"",
+    "LogGroupName": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncCallLogRetention08EF170A",
+      "LogGroupName"
+     ]
+    },
+    "MetricTransformations": [
+     {
+      "MetricName": "LimitExceededException",
+      "MetricNamespace": "TextractConstructGenericAsync",
+      "MetricValue": "1"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/undefined-limitExceededExceptionFilter/Resource"
+   }
+  },
+  "TextractAsyncundefinedthrottlingExceptionFilter13DE8729": {
+   "Type": "AWS::Logs::MetricFilter",
+   "Properties": {
+    "FilterPattern": "\"textract.exceptions.ThrottlingException\"",
+    "LogGroupName": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncCallLogRetention08EF170A",
+      "LogGroupName"
+     ]
+    },
+    "MetricTransformations": [
+     {
+      "MetricName": "ThrottlingException",
+      "MetricNamespace": "TextractConstructGenericAsync",
+      "MetricValue": "1"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/undefined-throttlingExceptionFilter/Resource"
+   }
+  },
+  "TextractAsyncundefinedprovisionedThroughputFilter0D6BFCEF": {
+   "Type": "AWS::Logs::MetricFilter",
+   "Properties": {
+    "FilterPattern": "\"textract.exceptions.ProvisionedThroughputExceededException\"",
+    "LogGroupName": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncCallLogRetention08EF170A",
+      "LogGroupName"
+     ]
+    },
+    "MetricTransformations": [
+     {
+      "MetricName": "ProvisionedThroughputExceededException",
+      "MetricNamespace": "TextractConstructGenericAsync",
+      "MetricValue": "1"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/undefined-provisionedThroughputFilter/Resource"
+   }
+  },
+  "TextractAsyncundefinedinternalServerErrorFilterB2971F4E": {
+   "Type": "AWS::Logs::MetricFilter",
+   "Properties": {
+    "FilterPattern": "\"textract.exceptions.InternalServerError\"",
+    "LogGroupName": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncCallLogRetention08EF170A",
+      "LogGroupName"
+     ]
+    },
+    "MetricTransformations": [
+     {
+      "MetricName": "InternalServerError",
+      "MetricNamespace": "TextractConstructGenericAsync",
+      "MetricValue": "1"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/undefined-internalServerErrorFilter/Resource"
+   }
+  },
+  "TextractAsyncappNameTestDashboardE9ECDC72": {
+   "Type": "AWS::CloudWatch::Dashboard",
+   "Properties": {
+    "DashboardBody": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"start\":\"start\",\"end\":\"end\",\"periodOverride\":\"auto\",\"widgets\":[{\"type\":\"text\",\"width\":24,\"height\":2,\"x\":0,\"y\":0,\"properties\":{\"markdown\":\"# Operational Data Row widgets\"}},{\"type\":\"metric\",\"width\":12,\"height\":6,\"x\":0,\"y\":2,\"properties\":{\"view\":\"timeSeries\",\"title\":\"PagesPerSecond\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[{\"label\":\"pages / (duration / 1000)\",\"expression\":\"pages / (duration / 1000)\"}],[\"TextractConstructGenericAsync\",\"NumberPagesProcessed\",{\"stat\":\"Sum\",\"visible\":false,\"id\":\"pages\"}],[\"TextractConstructGenericAsync\",\"Duration\",{\"visible\":false,\"id\":\"duration\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":12,\"height\":6,\"x\":12,\"y\":2,\"properties\":{\"view\":\"timeSeries\",\"title\":\"JobsStartedAndFinished\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"TextractConstructGenericAsync\",\"JobsFinished\",{\"stat\":\"Sum\"}],[\"TextractConstructGenericAsync\",\"JobFailure\",{\"stat\":\"Sum\"}],[\"TextractConstructGenericAsync\",\"JobsStarted\",{\"stat\":\"Sum\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":8,\"height\":6,\"x\":0,\"y\":8,\"properties\":{\"view\":\"timeSeries\",\"title\":\"Duration\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"TextractConstructGenericAsync\",\"Duration\"]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":8,\"height\":6,\"x\":8,\"y\":8,\"properties\":{\"view\":\"timeSeries\",\"title\":\"NumberPagesProcessed\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"TextractConstructGenericAsync\",\"NumberPagesProcessed\",{\"stat\":\"Sum\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":8,\"height\":6,\"x\":16,\"y\":8,\"properties\":{\"view\":\"timeSeries\",\"title\":\"NumberPagesSendToProcess\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"TextractConstructGenericAsync\",\"NumberPagesSend\",{\"stat\":\"Sum\"}]],\"yAxis\":{}}},{\"type\":\"text\",\"width\":24,\"height\":2,\"x\":0,\"y\":14,\"properties\":{\"markdown\":\"# Async Textract Exceptions Row\"}},{\"type\":\"metric\",\"width\":4,\"height\":6,\"x\":0,\"y\":16,\"properties\":{\"view\":\"timeSeries\",\"title\":\"Errors\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"TextractConstructGenericAsync\",\"Errors\",{\"stat\":\"Sum\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":4,\"height\":6,\"x\":4,\"y\":16,\"properties\":{\"view\":\"timeSeries\",\"title\":\"LimitExceeded\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"TextractConstructGenericAsync\",\"LimitExceededException\",{\"stat\":\"Sum\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":4,\"height\":6,\"x\":8,\"y\":16,\"properties\":{\"view\":\"timeSeries\",\"title\":\"Throttling\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"TextractConstructGenericAsync\",\"ThrottlingException\",{\"stat\":\"Sum\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":4,\"height\":6,\"x\":12,\"y\":16,\"properties\":{\"view\":\"timeSeries\",\"title\":\"ProvisionedThrougput\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"TextractConstructGenericAsync\",\"ProvisionedThroughputExceededException\",{\"stat\":\"Sum\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":4,\"height\":6,\"x\":16,\"y\":16,\"properties\":{\"view\":\"timeSeries\",\"title\":\"InternalServerError\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"TextractConstructGenericAsync\",\"InternalServerError\",{\"stat\":\"Sum\"}]],\"yAxis\":{}}},{\"type\":\"text\",\"width\":24,\"height\":2,\"x\":0,\"y\":22,\"properties\":{\"markdown\":\"# Textract\"}},{\"type\":\"metric\",\"width\":6,\"height\":6,\"x\":0,\"y\":24,\"properties\":{\"view\":\"timeSeries\",\"title\":\"Textract-StartDetectText-ThrottledCount\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"AWS/Textract\",\"ThrottledCount\",\"Operation\",\"StartDocumentTextDetection\",{\"stat\":\"Sum\"}]],\"yAxis\":{}}},{\"type\":\"text\",\"width\":24,\"height\":2,\"x\":0,\"y\":30,\"properties\":{\"markdown\":\"# textractAsyncCallFunction\"}},{\"type\":\"metric\",\"width\":8,\"height\":6,\"x\":0,\"y\":32,\"properties\":{\"view\":\"timeSeries\",\"title\":\"Async-Function-Errors\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"AWS/Lambda\",\"Errors\",\"FunctionName\",\"",
+       {
+        "Ref": "TextractAsyncTextractAsyncCall644804C6"
+       },
+       "\",{\"stat\":\"Sum\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":8,\"height\":6,\"x\":8,\"y\":32,\"properties\":{\"view\":\"timeSeries\",\"title\":\"Async-Function-Invocations\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"AWS/Lambda\",\"Invocations\",\"FunctionName\",\"",
+       {
+        "Ref": "TextractAsyncTextractAsyncCall644804C6"
+       },
+       "\",{\"stat\":\"Sum\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":8,\"height\":6,\"x\":16,\"y\":32,\"properties\":{\"view\":\"timeSeries\",\"title\":\"Async-Function-Throttles\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"AWS/Lambda\",\"Throttles\",\"FunctionName\",\"",
+       {
+        "Ref": "TextractAsyncTextractAsyncCall644804C6"
+       },
+       "\",{\"stat\":\"Sum\"}]],\"yAxis\":{}}},{\"type\":\"text\",\"width\":24,\"height\":2,\"x\":0,\"y\":38,\"properties\":{\"markdown\":\"# textractAsyncReceiveSNSFunction\"}},{\"type\":\"metric\",\"width\":8,\"height\":6,\"x\":0,\"y\":40,\"properties\":{\"view\":\"timeSeries\",\"title\":\"SNS-Function-Errors\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"AWS/Lambda\",\"Errors\",\"FunctionName\",\"",
+       {
+        "Ref": "TextractAsyncTextractAsyncSNSFunctionFDB63B51"
+       },
+       "\",{\"stat\":\"Sum\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":8,\"height\":6,\"x\":8,\"y\":40,\"properties\":{\"view\":\"timeSeries\",\"title\":\"SNS-Function-Invocations\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"AWS/Lambda\",\"Invocations\",\"FunctionName\",\"",
+       {
+        "Ref": "TextractAsyncTextractAsyncSNSFunctionFDB63B51"
+       },
+       "\",{\"stat\":\"Sum\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":8,\"height\":6,\"x\":16,\"y\":40,\"properties\":{\"view\":\"timeSeries\",\"title\":\"SNS-Function-Throttles\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"AWS/Lambda\",\"Throttles\",\"FunctionName\",\"",
+       {
+        "Ref": "TextractAsyncTextractAsyncSNSFunctionFDB63B51"
+       },
+       "\",{\"stat\":\"Sum\"}]],\"yAxis\":{}}}]}"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/TextractAsync/${appName}-TestDashboard/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "logs:DeleteRetentionPolicy",
+        "logs:PutRetentionPolicy"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+    "Roles": [
+     {
+      "Ref": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Handler": "index.handler",
+    "Runtime": "nodejs18.x",
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "5cc92ed0cea39e2b8de2dbc527dfb5980a3af9564bd1084d840b9787c7d0467e.zip"
+    },
+    "Role": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/Resource",
+    "aws:asset:path": "asset.5cc92ed0cea39e2b8de2dbc527dfb5980a3af9564bd1084d840b9787c7d0467e",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "SimpleAsyncWorkflowRole320A1530": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": {
+         "Fn::Join": [
+          "",
+          [
+           "states.",
+           {
+            "Ref": "AWS::Region"
+           },
+           ".amazonaws.com"
+          ]
+         ]
+        }
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/SimpleAsyncWorkflow/Role/Resource"
+   }
+  },
+  "SimpleAsyncWorkflowRoleDefaultPolicy9B6D0C24": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "states:StartExecution",
+       "Effect": "Allow",
+       "Resource": {
+        "Ref": "TextractAsyncStateMachineCD4A0F0B"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "SimpleAsyncWorkflowRoleDefaultPolicy9B6D0C24",
+    "Roles": [
+     {
+      "Ref": "SimpleAsyncWorkflowRole320A1530"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/SimpleAsyncWorkflow/Role/DefaultPolicy/Resource"
+   }
+  },
+  "SimpleAsyncWorkflow462ECA3D": {
+   "Type": "AWS::StepFunctions::StateMachine",
+   "Properties": {
+    "DefinitionString": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"StartAt\":\"TextractAsync\",\"States\":{\"TextractAsync\":{\"End\":true,\"Type\":\"Task\",\"TimeoutSeconds\":86400,\"ResultPath\":\"$.textract_result\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::states:startExecution.waitForTaskToken\",\"Parameters\":{\"Input\":{\"Token.$\":\"$$.Task.Token\",\"ExecutionId.$\":\"$$.Execution.Id\",\"Payload.$\":\"$\"},\"StateMachineArn\":\"",
+       {
+        "Ref": "TextractAsyncStateMachineCD4A0F0B"
+       },
+       "\"}}}}"
+      ]
+     ]
+    },
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "SimpleAsyncWorkflowRole320A1530",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "SimpleAsyncWorkflowRoleDefaultPolicy9B6D0C24",
+    "SimpleAsyncWorkflowRole320A1530"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/SimpleAsyncWorkflow/Resource"
+   }
+  },
+  "LambdaStartStepFunctionGenericServiceRole8447C9A7": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/LambdaStartStepFunctionGeneric/ServiceRole/Resource"
+   }
+  },
+  "LambdaStartStepFunctionGenericServiceRoleDefaultPolicy42660948": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "states:StartExecution",
+       "Effect": "Allow",
+       "Resource": {
+        "Ref": "SimpleAsyncWorkflow462ECA3D"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "LambdaStartStepFunctionGenericServiceRoleDefaultPolicy42660948",
+    "Roles": [
+     {
+      "Ref": "LambdaStartStepFunctionGenericServiceRole8447C9A7"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/LambdaStartStepFunctionGeneric/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "LambdaStartStepFunctionGeneric9A1E8F24": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:701c2c16e1f08fbd010f5572bab297ba0d065388ffefcddc9e70ec108a029186"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "STATE_MACHINE_ARN": {
+       "Ref": "SimpleAsyncWorkflow462ECA3D"
+      }
+     }
+    },
+    "MemorySize": 128,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "LambdaStartStepFunctionGenericServiceRole8447C9A7",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "LambdaStartStepFunctionGenericServiceRoleDefaultPolicy42660948",
+    "LambdaStartStepFunctionGenericServiceRole8447C9A7"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/LambdaStartStepFunctionGeneric/Resource",
+    "aws:asset:path": "asset.701c2c16e1f08fbd010f5572bab297ba0d065388ffefcddc9e70ec108a029186",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/Resource"
+   }
+  },
+  "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "s3:PutBucketNotification",
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36",
+    "Roles": [
+     {
+      "Ref": "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/DefaultPolicy/Resource"
+   }
+  },
+  "BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Description": "AWS CloudFormation handler for \"Custom::S3BucketNotifications\" resources (@aws-cdk/aws-s3)",
+    "Code": {
+     "ZipFile": "import boto3  # type: ignore\nimport json\nimport logging\nimport urllib.request\n\ns3 = boto3.client(\"s3\")\n\nEVENTBRIDGE_CONFIGURATION = 'EventBridgeConfiguration'\n\nCONFIGURATION_TYPES = [\"TopicConfigurations\", \"QueueConfigurations\", \"LambdaFunctionConfigurations\"]\n\ndef handler(event: dict, context):\n  response_status = \"SUCCESS\"\n  error_message = \"\"\n  try:\n    props = event[\"ResourceProperties\"]\n    bucket = props[\"BucketName\"]\n    notification_configuration = props[\"NotificationConfiguration\"]\n    request_type = event[\"RequestType\"]\n    managed = props.get('Managed', 'true').lower() == 'true'\n    stack_id = event['StackId']\n\n    if managed:\n      config = handle_managed(request_type, notification_configuration)\n    else:\n      config = handle_unmanaged(bucket, stack_id, request_type, notification_configuration)\n\n    put_bucket_notification_configuration(bucket, config)\n  except Exception as e:\n    logging.exception(\"Failed to put bucket notification configuration\")\n    response_status = \"FAILED\"\n    error_message = f\"Error: {str(e)}. \"\n  finally:\n    submit_response(event, context, response_status, error_message)\n\ndef handle_managed(request_type, notification_configuration):\n  if request_type == 'Delete':\n    return {}\n  return notification_configuration\n\ndef handle_unmanaged(bucket, stack_id, request_type, notification_configuration):\n  external_notifications = find_external_notifications(bucket, stack_id)\n\n  if request_type == 'Delete':\n    return external_notifications\n\n  def with_id(notification):\n    notification['Id'] = f\"{stack_id}-{hash(json.dumps(notification, sort_keys=True))}\"\n    return notification\n\n  notifications = {}\n  for t in CONFIGURATION_TYPES:\n    external = external_notifications.get(t, [])\n    incoming = [with_id(n) for n in notification_configuration.get(t, [])]\n    notifications[t] = external + incoming\n\n  if EVENTBRIDGE_CONFIGURATION in notification_configuration:\n    notifications[EVENTBRIDGE_CONFIGURATION] = notification_configuration[EVENTBRIDGE_CONFIGURATION]\n  elif EVENTBRIDGE_CONFIGURATION in external_notifications:\n    notifications[EVENTBRIDGE_CONFIGURATION] = external_notifications[EVENTBRIDGE_CONFIGURATION]\n\n  return notifications\n\ndef find_external_notifications(bucket, stack_id):\n  existing_notifications = get_bucket_notification_configuration(bucket)\n  external_notifications = {}\n  for t in CONFIGURATION_TYPES:\n    external_notifications[t] = [n for n in existing_notifications.get(t, []) if not n['Id'].startswith(f\"{stack_id}-\")]\n\n  if EVENTBRIDGE_CONFIGURATION in existing_notifications:\n    external_notifications[EVENTBRIDGE_CONFIGURATION] = existing_notifications[EVENTBRIDGE_CONFIGURATION]\n\n  return external_notifications\n\ndef get_bucket_notification_configuration(bucket):\n  return s3.get_bucket_notification_configuration(Bucket=bucket)\n\ndef put_bucket_notification_configuration(bucket, notification_configuration):\n  s3.put_bucket_notification_configuration(Bucket=bucket, NotificationConfiguration=notification_configuration)\n\ndef submit_response(event: dict, context, response_status: str, error_message: str):\n  response_body = json.dumps(\n    {\n      \"Status\": response_status,\n      \"Reason\": f\"{error_message}See the details in CloudWatch Log Stream: {context.log_stream_name}\",\n      \"PhysicalResourceId\": event.get(\"PhysicalResourceId\") or event[\"LogicalResourceId\"],\n      \"StackId\": event[\"StackId\"],\n      \"RequestId\": event[\"RequestId\"],\n      \"LogicalResourceId\": event[\"LogicalResourceId\"],\n      \"NoEcho\": False,\n    }\n  ).encode(\"utf-8\")\n  headers = {\"content-type\": \"\", \"content-length\": str(len(response_body))}\n  try:\n    req = urllib.request.Request(url=event[\"ResponseURL\"], headers=headers, data=response_body, method=\"PUT\")\n    with urllib.request.urlopen(req) as response:\n      print(response.read().decode(\"utf-8\"))\n    print(\"Status code: \" + response.reason)\n  except Exception as e:\n      print(\"send(..) failed executing request.urlopen(..): \" + str(e))\n"
+    },
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.9",
+    "Timeout": 300
+   },
+   "DependsOn": [
+    "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36",
+    "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/1VS227CMAz9Ft5DdkHatMcBQkICrSp7R2li2qxtXMUJqKr670tTLuXJ5xzbsY+Vd/71xl9n4kJzqcp5pTPeHZyQJQvSsaMF75ZeluDY6mSuaAwJVlq2D/nKR7IUBD2rRJ0pwbtQk4CtNZFGw9YYKuy2FjlsvJFu0ELFDfdMtUbUqMImvyKrYEhG0DMtat6lOGoxPrYYUc/IUGjERsvYGMHBZyStbm6zprxnIO1REIEjPtnte1CGHE+hQdIObTvYYhXmYcIO8xQcmPjkHpzVcqMrB3Z4f8rDRg6a09UdHZ2gkvgunmZrzljCc0G8v4O9kIU20eiU90xW6NVFOFnwbi2oyFBYNZTdSZi4uBmKLnq28uSwToHQWzle746fUonFs1bBRWwMk3NtcjZt/PGu8fE7rNAoPZ4waV2B5mXBP/nbx+yPtJ5bH25TA0/H+A8FFZcXaQIAAA=="
+   },
+   "Metadata": {
+    "aws:cdk:path": "MostSimpleAsyncWorkflow/CDKMetadata/Default"
+   },
+   "Condition": "CDKMetadataAvailable"
+  }
+ },
+ "Outputs": {
+  "DocumentUploadLocation": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "s3://",
+      {
+       "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+      },
+      "/uploads/"
+     ]
+    ]
+   }
+  },
+  "StepFunctionFlowLink": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Ref": "AWS::Region"
+      },
+      ".console.aws.amazon.com/states/home?region=",
+      {
+       "Ref": "AWS::Region"
+      },
+      "#/statemachines/view/",
+      {
+       "Ref": "SimpleAsyncWorkflow462ECA3D"
+      }
+     ]
+    ]
+   }
+  }
+ },
+ "Conditions": {
+  "CDKMetadataAvailable": {
+   "Fn::Or": [
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "af-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ca-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-northwest-1"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-3"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "me-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "sa-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-2"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-west-2"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

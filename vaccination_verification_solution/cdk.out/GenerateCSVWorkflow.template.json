@@ -1,0 +1,1999 @@
+{
+ "Description": "IDP CDK constructs sample for generating CSVs (SO9217)",
+ "Resources": {
+  "TextractSimpleAsyncWorkflow2D7D5B8D": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "Tags": [
+     {
+      "Key": "aws-cdk:auto-delete-objects",
+      "Value": "true"
+     }
+    ]
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/TextractSimpleAsyncWorkflow/Resource"
+   }
+  },
+  "TextractSimpleAsyncWorkflowPolicyDEA557C5": {
+   "Type": "AWS::S3::BucketPolicy",
+   "Properties": {
+    "Bucket": {
+     "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+    },
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:DeleteObject*",
+        "s3:GetBucket*",
+        "s3:List*"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": {
+         "Fn::GetAtt": [
+          "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+          "Arn"
+         ]
+        }
+       },
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "TextractSimpleAsyncWorkflow2D7D5B8D",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "TextractSimpleAsyncWorkflow2D7D5B8D",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/TextractSimpleAsyncWorkflow/Policy/Resource"
+   }
+  },
+  "TextractSimpleAsyncWorkflowAutoDeleteObjectsCustomResourceA0A53394": {
+   "Type": "Custom::S3AutoDeleteObjects",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+      "Arn"
+     ]
+    },
+    "BucketName": {
+     "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+    }
+   },
+   "DependsOn": [
+    "TextractSimpleAsyncWorkflowPolicyDEA557C5"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/TextractSimpleAsyncWorkflow/AutoDeleteObjectsCustomResource/Default"
+   }
+  },
+  "TextractSimpleAsyncWorkflowNotificationsC6B74026": {
+   "Type": "Custom::S3BucketNotifications",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691",
+      "Arn"
+     ]
+    },
+    "BucketName": {
+     "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+    },
+    "NotificationConfiguration": {
+     "LambdaFunctionConfigurations": [
+      {
+       "Events": [
+        "s3:ObjectCreated:*"
+       ],
+       "Filter": {
+        "Key": {
+         "FilterRules": [
+          {
+           "Name": "prefix",
+           "Value": "uploads"
+          }
+         ]
+        }
+       },
+       "LambdaFunctionArn": {
+        "Fn::GetAtt": [
+         "LambdaStartStepFunctionGeneric9A1E8F24",
+         "Arn"
+        ]
+       }
+      }
+     ]
+    },
+    "Managed": true
+   },
+   "DependsOn": [
+    "TextractSimpleAsyncWorkflowAllowBucketNotificationsToGenerateCSVWorkflowLambdaStartStepFunctionGeneric5491ED14EA2FDDB2"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/TextractSimpleAsyncWorkflow/Notifications/Resource"
+   }
+  },
+  "TextractSimpleAsyncWorkflowAllowBucketNotificationsToGenerateCSVWorkflowLambdaStartStepFunctionGeneric5491ED14EA2FDDB2": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "LambdaStartStepFunctionGeneric9A1E8F24",
+      "Arn"
+     ]
+    },
+    "Principal": "s3.amazonaws.com",
+    "SourceAccount": {
+     "Ref": "AWS::AccountId"
+    },
+    "SourceArn": {
+     "Fn::GetAtt": [
+      "TextractSimpleAsyncWorkflow2D7D5B8D",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/TextractSimpleAsyncWorkflow/AllowBucketNotificationsToGenerateCSVWorkflowLambdaStartStepFunctionGeneric5491ED14"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "a657308e723bb9460b800cb3b47dadb74e28243edfe246bf7755c45ec312eb97.zip"
+    },
+    "Timeout": 900,
+    "MemorySize": 128,
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs18.x",
+    "Description": {
+     "Fn::Join": [
+      "",
+      [
+       "Lambda function for auto-deleting objects in ",
+       {
+        "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+       },
+       " S3 bucket."
+      ]
+     ]
+    }
+   },
+   "DependsOn": [
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler",
+    "aws:asset:path": "asset.a657308e723bb9460b800cb3b47dadb74e28243edfe246bf7755c45ec312eb97",
+    "aws:asset:property": "Code"
+   }
+  },
+  "GenerateCSVWorkflowDeciderTextractDeciderServiceRole02AEC6F7": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/GenerateCSVWorkflow-Decider/TextractDecider/ServiceRole/Resource"
+   }
+  },
+  "GenerateCSVWorkflowDeciderTextractDeciderServiceRoleDefaultPolicyBF657C31": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:GetObject",
+        "s3:ListBucket"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "GenerateCSVWorkflowDeciderTextractDeciderServiceRoleDefaultPolicyBF657C31",
+    "Roles": [
+     {
+      "Ref": "GenerateCSVWorkflowDeciderTextractDeciderServiceRole02AEC6F7"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/GenerateCSVWorkflow-Decider/TextractDecider/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "GenerateCSVWorkflowDeciderTextractDecider8870EC73": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:c88612b3f3b356d0509c886376bc6c4ea15ae2a67154c9e4a936e6665b2b7bb0"
+     }
+    },
+    "MemorySize": 1024,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "GenerateCSVWorkflowDeciderTextractDeciderServiceRole02AEC6F7",
+      "Arn"
+     ]
+    },
+    "Timeout": 900
+   },
+   "DependsOn": [
+    "GenerateCSVWorkflowDeciderTextractDeciderServiceRoleDefaultPolicyBF657C31",
+    "GenerateCSVWorkflowDeciderTextractDeciderServiceRole02AEC6F7"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/GenerateCSVWorkflow-Decider/TextractDecider/Resource",
+    "aws:asset:path": "asset.c88612b3f3b356d0509c886376bc6c4ea15ae2a67154c9e4a936e6665b2b7bb0",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "TextractAsyncTextractTaskTokenTableC036FA29": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "ID",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "ID",
+      "KeyType": "HASH"
+     }
+    ],
+    "TimeToLiveSpecification": {
+     "AttributeName": "ttltimestamp",
+     "Enabled": true
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/TextractAsync/TextractTaskTokenTable/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSRole3D20F3D6": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "textract.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/AmazonSQSFullAccess"
+       ]
+      ]
+     },
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/AmazonSNSFullAccess"
+       ]
+      ]
+     },
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/AmazonS3ReadOnlyAccess"
+       ]
+      ]
+     },
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/AmazonTextractFullAccess"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/TextractAsync/TextractAsyncSNSRole/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSBB89DC08": {
+   "Type": "AWS::SNS::Topic",
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/TextractAsync/TextractAsyncSNS/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncCallServiceRole5AD11AEF": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/TextractAsync/TextractAsyncCall/ServiceRole/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncCallServiceRoleDefaultPolicy458B5442": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:GetObject",
+        "s3:ListBucket",
+        "states:SendTaskFailure",
+        "textract:Get*",
+        "textract:Start*"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      },
+      {
+       "Action": "s3:PutObject",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+           },
+           "/textract-temp-output/"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+           },
+           "/textract-temp-output/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "TextractAsyncTextractTaskTokenTableC036FA29",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TextractAsyncTextractAsyncCallServiceRoleDefaultPolicy458B5442",
+    "Roles": [
+     {
+      "Ref": "TextractAsyncTextractAsyncCallServiceRole5AD11AEF"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/TextractAsync/TextractAsyncCall/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncCall644804C6": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:d52863a8a715725aea86e462bd1b6e554c84642dd1171d335cc7205622c342d1"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "NOTIFICATION_SNS": {
+       "Ref": "TextractAsyncTextractAsyncSNSBB89DC08"
+      },
+      "NOTIFICATION_ROLE_ARN": {
+       "Fn::GetAtt": [
+        "TextractAsyncTextractAsyncSNSRole3D20F3D6",
+        "Arn"
+       ]
+      },
+      "TOKEN_STORE_DDB": {
+       "Ref": "TextractAsyncTextractTaskTokenTableC036FA29"
+      },
+      "S3_OUTPUT_BUCKET": {
+       "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+      },
+      "S3_TEMP_OUTPUT_PREFIX": "textract-temp-output",
+      "LOG_LEVEL": "DEBUG",
+      "TEXTRACT_API": "GENERIC"
+     }
+    },
+    "MemorySize": 512,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncCallServiceRole5AD11AEF",
+      "Arn"
+     ]
+    },
+    "Timeout": 300
+   },
+   "DependsOn": [
+    "TextractAsyncTextractAsyncCallServiceRoleDefaultPolicy458B5442",
+    "TextractAsyncTextractAsyncCallServiceRole5AD11AEF"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/TextractAsync/TextractAsyncCall/Resource",
+    "aws:asset:path": "asset.d52863a8a715725aea86e462bd1b6e554c84642dd1171d335cc7205622c342d1",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionServiceRole33A95889": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/TextractAsync/TextractAsyncSNSFunction/ServiceRole/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionServiceRoleDefaultPolicyAD3C2896": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "dynamodb:GetItem",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "TextractAsyncTextractTaskTokenTableC036FA29",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "states:SendTaskFailure",
+        "states:SendTaskSuccess"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TextractAsyncTextractAsyncSNSFunctionServiceRoleDefaultPolicyAD3C2896",
+    "Roles": [
+     {
+      "Ref": "TextractAsyncTextractAsyncSNSFunctionServiceRole33A95889"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/TextractAsync/TextractAsyncSNSFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionFDB63B51": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:bb5b52a2747496721293f581a5e4f818e69024d4f98085f9f0bc94865c37b01c"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "TOKEN_STORE_DDB": {
+       "Ref": "TextractAsyncTextractTaskTokenTableC036FA29"
+      },
+      "S3_OUTPUT_BUCKET": {
+       "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+      },
+      "S3_TEMP_OUTPUT_PREFIX": "textract-temp-output",
+      "TEXTRACT_API": "GENERIC",
+      "LOG_LEVEL": "DEBUG"
+     }
+    },
+    "MemorySize": 128,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncSNSFunctionServiceRole33A95889",
+      "Arn"
+     ]
+    },
+    "Timeout": 900
+   },
+   "DependsOn": [
+    "TextractAsyncTextractAsyncSNSFunctionServiceRoleDefaultPolicyAD3C2896",
+    "TextractAsyncTextractAsyncSNSFunctionServiceRole33A95889"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/TextractAsync/TextractAsyncSNSFunction/Resource",
+    "aws:asset:path": "asset.bb5b52a2747496721293f581a5e4f818e69024d4f98085f9f0bc94865c37b01c",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionAllowInvokeGenerateCSVWorkflowTextractAsyncTextractAsyncSNSAD3CDECB38D843F5": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncSNSFunctionFDB63B51",
+      "Arn"
+     ]
+    },
+    "Principal": "sns.amazonaws.com",
+    "SourceArn": {
+     "Ref": "TextractAsyncTextractAsyncSNSBB89DC08"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/TextractAsync/TextractAsyncSNSFunction/AllowInvoke:GenerateCSVWorkflowTextractAsyncTextractAsyncSNSAD3CDECB"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionTextractAsyncSNS0BE323B1": {
+   "Type": "AWS::SNS::Subscription",
+   "Properties": {
+    "Endpoint": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncSNSFunctionFDB63B51",
+      "Arn"
+     ]
+    },
+    "Protocol": "lambda",
+    "TopicArn": {
+     "Ref": "TextractAsyncTextractAsyncSNSBB89DC08"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/TextractAsync/TextractAsyncSNSFunction/TextractAsyncSNS/Resource"
+   }
+  },
+  "TextractAsyncStateMachineRoleDF5BF968": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": {
+         "Fn::Join": [
+          "",
+          [
+           "states.",
+           {
+            "Ref": "AWS::Region"
+           },
+           ".amazonaws.com"
+          ]
+         ]
+        }
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/TextractAsync/StateMachine/Role/Resource"
+   }
+  },
+  "TextractAsyncStateMachineRoleDefaultPolicy042AFF96": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "TextractAsyncTextractAsyncCall644804C6",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "TextractAsyncTextractAsyncCall644804C6",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TextractAsyncStateMachineRoleDefaultPolicy042AFF96",
+    "Roles": [
+     {
+      "Ref": "TextractAsyncStateMachineRoleDF5BF968"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/TextractAsync/StateMachine/Role/DefaultPolicy/Resource"
+   }
+  },
+  "TextractAsyncStateMachineCD4A0F0B": {
+   "Type": "AWS::StepFunctions::StateMachine",
+   "Properties": {
+    "DefinitionString": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"StartAt\":\"TextractAsyncCallTask\",\"States\":{\"TextractAsyncCallTask\":{\"End\":true,\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2},{\"ErrorEquals\":[\"ThrottlingException\",\"LimitExceededException\",\"InternalServerError\",\"ProvisionedThroughputExceededException\",\"Lambda.TooManyRequestsException\",\"ConnectionClosedException\",\"Lambda.Unknown\"],\"IntervalSeconds\":1,\"MaxAttempts\":100,\"BackoffRate\":1.1}],\"Type\":\"Task\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::lambda:invoke\",\"Parameters\":{\"FunctionName\":\"",
+       {
+        "Fn::GetAtt": [
+         "TextractAsyncTextractAsyncCall644804C6",
+         "Arn"
+        ]
+       },
+       "\",\"Payload.$\":\"$\"}}},\"TimeoutSeconds\":10368000}"
+      ]
+     ]
+    },
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "TextractAsyncStateMachineRoleDF5BF968",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "TextractAsyncStateMachineRoleDefaultPolicy042AFF96",
+    "TextractAsyncStateMachineRoleDF5BF968"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/TextractAsync/StateMachine/Resource"
+   }
+  },
+  "AsyncToJSONTextractAsyncToJSONServiceRoleA35D8AED": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/AsyncToJSON/TextractAsyncToJSON/ServiceRole/Resource"
+   }
+  },
+  "AsyncToJSONTextractAsyncToJSONServiceRoleDefaultPolicyBE0E99E0": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:GetObject",
+        "s3:ListBucket"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      },
+      {
+       "Action": "s3:PutObject",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+           },
+           "/textract-output/"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+           },
+           "/textract-output/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "AsyncToJSONTextractAsyncToJSONServiceRoleDefaultPolicyBE0E99E0",
+    "Roles": [
+     {
+      "Ref": "AsyncToJSONTextractAsyncToJSONServiceRoleA35D8AED"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/AsyncToJSON/TextractAsyncToJSON/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "AsyncToJSONTextractAsyncToJSONB708C612": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:2941b022fa5b0c7498d53d8a01c9c7c80a8c5286a64ed22bc0122c0b714ab7da"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "S3_OUTPUT_BUCKET": {
+       "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+      },
+      "S3_OUTPUT_PREFIX": "textract-output",
+      "LOG_LEVEL": "DEBUG",
+      "TEXTRACT_API": "GENERIC"
+     }
+    },
+    "MemorySize": 10240,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "AsyncToJSONTextractAsyncToJSONServiceRoleA35D8AED",
+      "Arn"
+     ]
+    },
+    "Timeout": 900
+   },
+   "DependsOn": [
+    "AsyncToJSONTextractAsyncToJSONServiceRoleDefaultPolicyBE0E99E0",
+    "AsyncToJSONTextractAsyncToJSONServiceRoleA35D8AED"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/AsyncToJSON/TextractAsyncToJSON/Resource",
+    "aws:asset:path": "asset.2941b022fa5b0c7498d53d8a01c9c7c80a8c5286a64ed22bc0122c0b714ab7da",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "GenerateCSVsTextractCSVGeneratorServiceRoleBC24D796": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/GenerateCSVs/TextractCSVGenerator/ServiceRole/Resource"
+   }
+  },
+  "GenerateCSVsTextractCSVGeneratorServiceRoleDefaultPolicy4EB910D6": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:GetObject",
+        "s3:ListBucket",
+        "states:SendTaskFailure",
+        "states:SendTaskSuccess"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      },
+      {
+       "Action": "s3:PutObject",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+           },
+           "/textract-csv-output/"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+           },
+           "/textract-csv-output/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "GenerateCSVsTextractCSVGeneratorServiceRoleDefaultPolicy4EB910D6",
+    "Roles": [
+     {
+      "Ref": "GenerateCSVsTextractCSVGeneratorServiceRoleBC24D796"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/GenerateCSVs/TextractCSVGenerator/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "GenerateCSVsTextractCSVGenerator7C99BABC": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:35896a31a429d7e80cdecdd32ab580e543a3b40ff9b9c00d6aa10ae1f7538749"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "CSV_S3_OUTPUT_BUCKET": {
+       "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+      },
+      "CSV_S3_OUTPUT_PREFIX": "textract-csv-output",
+      "LOG_LEVEL": "DEBUG",
+      "OUTPUT_TYPE": "CSV",
+      "OUTPUT_FEATURES": "FORMS,TABLES,QUERIES,SIGNATURES",
+      "OPENSEARCH_INDEX": "my-index",
+      "TEXTRACT_API": "GENERIC",
+      "META_DATA_TO_APPEND": ""
+     }
+    },
+    "MemorySize": 1048,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "GenerateCSVsTextractCSVGeneratorServiceRoleBC24D796",
+      "Arn"
+     ]
+    },
+    "Timeout": 300
+   },
+   "DependsOn": [
+    "GenerateCSVsTextractCSVGeneratorServiceRoleDefaultPolicy4EB910D6",
+    "GenerateCSVsTextractCSVGeneratorServiceRoleBC24D796"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/GenerateCSVs/TextractCSVGenerator/Resource",
+    "aws:asset:path": "asset.35896a31a429d7e80cdecdd32ab580e543a3b40ff9b9c00d6aa10ae1f7538749",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "GenerateCSVsStateMachineRole0698EA57": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": {
+         "Fn::Join": [
+          "",
+          [
+           "states.",
+           {
+            "Ref": "AWS::Region"
+           },
+           ".amazonaws.com"
+          ]
+         ]
+        }
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/GenerateCSVs/StateMachine/Role/Resource"
+   }
+  },
+  "GenerateCSVsStateMachineRoleDefaultPolicyAC46DD1F": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "GenerateCSVsTextractCSVGenerator7C99BABC",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "GenerateCSVsTextractCSVGenerator7C99BABC",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "GenerateCSVsStateMachineRoleDefaultPolicyAC46DD1F",
+    "Roles": [
+     {
+      "Ref": "GenerateCSVsStateMachineRole0698EA57"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/GenerateCSVs/StateMachine/Role/DefaultPolicy/Resource"
+   }
+  },
+  "GenerateCSVsStateMachineF71E1897": {
+   "Type": "AWS::StepFunctions::StateMachine",
+   "Properties": {
+    "DefinitionString": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"StartAt\":\"csvGeneratorInvoke\",\"States\":{\"csvGeneratorInvoke\":{\"End\":true,\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2},{\"ErrorEquals\":[\"Lambda.TooManyRequestsException\",\"Lambda.Unknown\"],\"IntervalSeconds\":1,\"MaxAttempts\":100,\"BackoffRate\":1.1}],\"Type\":\"Task\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::lambda:invoke\",\"Parameters\":{\"FunctionName\":\"",
+       {
+        "Fn::GetAtt": [
+         "GenerateCSVsTextractCSVGenerator7C99BABC",
+         "Arn"
+        ]
+       },
+       "\",\"Payload.$\":\"$\"}}}}"
+      ]
+     ]
+    },
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "GenerateCSVsStateMachineRole0698EA57",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "GenerateCSVsStateMachineRoleDefaultPolicyAC46DD1F",
+    "GenerateCSVsStateMachineRole0698EA57"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/GenerateCSVs/StateMachine/Resource"
+   }
+  },
+  "GenerateCSVWorkflowRole8780A553": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": {
+         "Fn::Join": [
+          "",
+          [
+           "states.",
+           {
+            "Ref": "AWS::Region"
+           },
+           ".amazonaws.com"
+          ]
+         ]
+        }
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/GenerateCSVWorkflow/Role/Resource"
+   }
+  },
+  "GenerateCSVWorkflowRoleDefaultPolicy3E1AFD96": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "AsyncToJSONTextractAsyncToJSONB708C612",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "GenerateCSVWorkflowDeciderTextractDecider8870EC73",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "AsyncToJSONTextractAsyncToJSONB708C612",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "GenerateCSVWorkflowDeciderTextractDecider8870EC73",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": "states:StartExecution",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Ref": "GenerateCSVsStateMachineF71E1897"
+        },
+        {
+         "Ref": "TextractAsyncStateMachineCD4A0F0B"
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "GenerateCSVWorkflowRoleDefaultPolicy3E1AFD96",
+    "Roles": [
+     {
+      "Ref": "GenerateCSVWorkflowRole8780A553"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/GenerateCSVWorkflow/Role/DefaultPolicy/Resource"
+   }
+  },
+  "GenerateCSVWorkflowF9F71ED0": {
+   "Type": "AWS::StepFunctions::StateMachine",
+   "Properties": {
+    "DefinitionString": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"StartAt\":\"GenerateCSVWorkflow-Decider\",\"States\":{\"GenerateCSVWorkflow-Decider\":{\"Next\":\"TextractAsync\",\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2},{\"ErrorEquals\":[\"Lambda.TooManyRequestsException\",\"Lambda.Unknown\"],\"IntervalSeconds\":1,\"MaxAttempts\":100,\"BackoffRate\":1.1}],\"Type\":\"Task\",\"TimeoutSeconds\":100,\"OutputPath\":\"$.Payload\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::lambda:invoke\",\"Parameters\":{\"FunctionName\":\"",
+       {
+        "Fn::GetAtt": [
+         "GenerateCSVWorkflowDeciderTextractDecider8870EC73",
+         "Arn"
+        ]
+       },
+       "\",\"Payload.$\":\"$\"}},\"TextractAsync\":{\"Next\":\"AsyncToJSON\",\"Type\":\"Task\",\"TimeoutSeconds\":86400,\"ResultPath\":\"$.textract_result\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::states:startExecution.waitForTaskToken\",\"Parameters\":{\"Input\":{\"Token.$\":\"$$.Task.Token\",\"ExecutionId.$\":\"$$.Execution.Id\",\"Payload.$\":\"$\"},\"StateMachineArn\":\"",
+       {
+        "Ref": "TextractAsyncStateMachineCD4A0F0B"
+       },
+       "\"}},\"AsyncToJSON\":{\"Next\":\"GenerateCSVs\",\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2},{\"ErrorEquals\":[\"Lambda.TooManyRequestsException\",\"Lambda.Unknown\"],\"IntervalSeconds\":1,\"MaxAttempts\":100,\"BackoffRate\":1.1}],\"Type\":\"Task\",\"TimeoutSeconds\":900,\"OutputPath\":\"$.Payload\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::lambda:invoke\",\"Parameters\":{\"FunctionName\":\"",
+       {
+        "Fn::GetAtt": [
+         "AsyncToJSONTextractAsyncToJSONB708C612",
+         "Arn"
+        ]
+       },
+       "\",\"Payload.$\":\"$\"}},\"GenerateCSVs\":{\"End\":true,\"Type\":\"Task\",\"ResultPath\":\"$.txt_output_location\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::states:startExecution.waitForTaskToken\",\"Parameters\":{\"Input\":{\"Token.$\":\"$$.Task.Token\",\"ExecutionId.$\":\"$$.Execution.Id\",\"Payload.$\":\"$\"},\"StateMachineArn\":\"",
+       {
+        "Ref": "GenerateCSVsStateMachineF71E1897"
+       },
+       "\"}}}}"
+      ]
+     ]
+    },
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "GenerateCSVWorkflowRole8780A553",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "GenerateCSVWorkflowRoleDefaultPolicy3E1AFD96",
+    "GenerateCSVWorkflowRole8780A553"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/GenerateCSVWorkflow/Resource"
+   }
+  },
+  "LambdaStartStepFunctionGenericServiceRole8447C9A7": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/LambdaStartStepFunctionGeneric/ServiceRole/Resource"
+   }
+  },
+  "LambdaStartStepFunctionGenericServiceRoleDefaultPolicy42660948": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "states:StartExecution",
+       "Effect": "Allow",
+       "Resource": {
+        "Ref": "GenerateCSVWorkflowF9F71ED0"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "LambdaStartStepFunctionGenericServiceRoleDefaultPolicy42660948",
+    "Roles": [
+     {
+      "Ref": "LambdaStartStepFunctionGenericServiceRole8447C9A7"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/LambdaStartStepFunctionGeneric/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "LambdaStartStepFunctionGeneric9A1E8F24": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:0345782547600009fc2303b9522fa5f1a232d3b06165e4dfa2d4e51137764637"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "STATE_MACHINE_ARN": {
+       "Ref": "GenerateCSVWorkflowF9F71ED0"
+      }
+     }
+    },
+    "MemorySize": 128,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "LambdaStartStepFunctionGenericServiceRole8447C9A7",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "LambdaStartStepFunctionGenericServiceRoleDefaultPolicy42660948",
+    "LambdaStartStepFunctionGenericServiceRole8447C9A7"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/LambdaStartStepFunctionGeneric/Resource",
+    "aws:asset:path": "asset.0345782547600009fc2303b9522fa5f1a232d3b06165e4dfa2d4e51137764637",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "LambdaStartStepFunctionGenericLogRetentionCC510937": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "LambdaStartStepFunctionGeneric9A1E8F24"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/LambdaStartStepFunctionGeneric/LogRetention/Resource"
+   }
+  },
+  "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/Resource"
+   }
+  },
+  "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "s3:PutBucketNotification",
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36",
+    "Roles": [
+     {
+      "Ref": "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/DefaultPolicy/Resource"
+   }
+  },
+  "BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Description": "AWS CloudFormation handler for \"Custom::S3BucketNotifications\" resources (@aws-cdk/aws-s3)",
+    "Code": {
+     "ZipFile": "import boto3  # type: ignore\nimport json\nimport logging\nimport urllib.request\n\ns3 = boto3.client(\"s3\")\n\nEVENTBRIDGE_CONFIGURATION = 'EventBridgeConfiguration'\n\nCONFIGURATION_TYPES = [\"TopicConfigurations\", \"QueueConfigurations\", \"LambdaFunctionConfigurations\"]\n\ndef handler(event: dict, context):\n  response_status = \"SUCCESS\"\n  error_message = \"\"\n  try:\n    props = event[\"ResourceProperties\"]\n    bucket = props[\"BucketName\"]\n    notification_configuration = props[\"NotificationConfiguration\"]\n    request_type = event[\"RequestType\"]\n    managed = props.get('Managed', 'true').lower() == 'true'\n    stack_id = event['StackId']\n\n    if managed:\n      config = handle_managed(request_type, notification_configuration)\n    else:\n      config = handle_unmanaged(bucket, stack_id, request_type, notification_configuration)\n\n    put_bucket_notification_configuration(bucket, config)\n  except Exception as e:\n    logging.exception(\"Failed to put bucket notification configuration\")\n    response_status = \"FAILED\"\n    error_message = f\"Error: {str(e)}. \"\n  finally:\n    submit_response(event, context, response_status, error_message)\n\ndef handle_managed(request_type, notification_configuration):\n  if request_type == 'Delete':\n    return {}\n  return notification_configuration\n\ndef handle_unmanaged(bucket, stack_id, request_type, notification_configuration):\n  external_notifications = find_external_notifications(bucket, stack_id)\n\n  if request_type == 'Delete':\n    return external_notifications\n\n  def with_id(notification):\n    notification['Id'] = f\"{stack_id}-{hash(json.dumps(notification, sort_keys=True))}\"\n    return notification\n\n  notifications = {}\n  for t in CONFIGURATION_TYPES:\n    external = external_notifications.get(t, [])\n    incoming = [with_id(n) for n in notification_configuration.get(t, [])]\n    notifications[t] = external + incoming\n\n  if EVENTBRIDGE_CONFIGURATION in notification_configuration:\n    notifications[EVENTBRIDGE_CONFIGURATION] = notification_configuration[EVENTBRIDGE_CONFIGURATION]\n  elif EVENTBRIDGE_CONFIGURATION in external_notifications:\n    notifications[EVENTBRIDGE_CONFIGURATION] = external_notifications[EVENTBRIDGE_CONFIGURATION]\n\n  return notifications\n\ndef find_external_notifications(bucket, stack_id):\n  existing_notifications = get_bucket_notification_configuration(bucket)\n  external_notifications = {}\n  for t in CONFIGURATION_TYPES:\n    external_notifications[t] = [n for n in existing_notifications.get(t, []) if not n['Id'].startswith(f\"{stack_id}-\")]\n\n  if EVENTBRIDGE_CONFIGURATION in existing_notifications:\n    external_notifications[EVENTBRIDGE_CONFIGURATION] = existing_notifications[EVENTBRIDGE_CONFIGURATION]\n\n  return external_notifications\n\ndef get_bucket_notification_configuration(bucket):\n  return s3.get_bucket_notification_configuration(Bucket=bucket)\n\ndef put_bucket_notification_configuration(bucket, notification_configuration):\n  s3.put_bucket_notification_configuration(Bucket=bucket, NotificationConfiguration=notification_configuration)\n\ndef submit_response(event: dict, context, response_status: str, error_message: str):\n  response_body = json.dumps(\n    {\n      \"Status\": response_status,\n      \"Reason\": f\"{error_message}See the details in CloudWatch Log Stream: {context.log_stream_name}\",\n      \"PhysicalResourceId\": event.get(\"PhysicalResourceId\") or event[\"LogicalResourceId\"],\n      \"StackId\": event[\"StackId\"],\n      \"RequestId\": event[\"RequestId\"],\n      \"LogicalResourceId\": event[\"LogicalResourceId\"],\n      \"NoEcho\": False,\n    }\n  ).encode(\"utf-8\")\n  headers = {\"content-type\": \"\", \"content-length\": str(len(response_body))}\n  try:\n    req = urllib.request.Request(url=event[\"ResponseURL\"], headers=headers, data=response_body, method=\"PUT\")\n    with urllib.request.urlopen(req) as response:\n      print(response.read().decode(\"utf-8\"))\n    print(\"Status code: \" + response.reason)\n  except Exception as e:\n      print(\"send(..) failed executing request.urlopen(..): \" + str(e))\n"
+    },
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.9",
+    "Timeout": 300
+   },
+   "DependsOn": [
+    "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36",
+    "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "logs:DeleteRetentionPolicy",
+        "logs:PutRetentionPolicy"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+    "Roles": [
+     {
+      "Ref": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Handler": "index.handler",
+    "Runtime": "nodejs18.x",
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "5cc92ed0cea39e2b8de2dbc527dfb5980a3af9564bd1084d840b9787c7d0467e.zip"
+    },
+    "Role": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/Resource",
+    "aws:asset:path": "asset.5cc92ed0cea39e2b8de2dbc527dfb5980a3af9564bd1084d840b9787c7d0467e",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/1VRwU7DMAz9lt2zwJgE4siGkCaBqDruU5p6nWkbV3EyVFX9d9JkY+Xk52fH79l5kM8reb9QP7zUZb1ssJDD3ildi0AdBl7LYeN1DU5sj+aCUsioQd3f6Eueko1iGEWj2qJUcgg9GdgWmZGMeKXQYXetquDNG+0mLnRc8ShQtXLIqYGJjvGmldAoQNuDYgbHcjbvZWKmmsyhI0ZHtp+sCHbQHS8CfHCKa5bv0d3OnKkGUfZGtVSG7b9UkZQjGAUbDiR1qCMZwd4XrC12V+/zfPwvFs/p4EPpE5o4d56HG1EVrFCVgwMT5/H6ullcZxRbz47aHJi81ekof/hfKbN0xhKsiA+DToWmEvOHn951Pv7llkyJyW/WuxOZu7V8kqvHxTcjLq0PXlqQeYq/BSej5iYCAAA="
+   },
+   "Metadata": {
+    "aws:cdk:path": "GenerateCSVWorkflow/CDKMetadata/Default"
+   },
+   "Condition": "CDKMetadataAvailable"
+  }
+ },
+ "Outputs": {
+  "DocumentUploadLocation": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "s3://",
+      {
+       "Ref": "TextractSimpleAsyncWorkflow2D7D5B8D"
+      },
+      "/uploads/"
+     ]
+    ]
+   }
+  },
+  "StartStepFunctionLambdaLogGroup": {
+   "Value": {
+    "Fn::GetAtt": [
+     "LambdaStartStepFunctionGenericLogRetentionCC510937",
+     "LogGroupName"
+    ]
+   }
+  },
+  "StepFunctionFlowLink": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Ref": "AWS::Region"
+      },
+      ".console.aws.amazon.com/states/home?region=",
+      {
+       "Ref": "AWS::Region"
+      },
+      "#/statemachines/view/",
+      {
+       "Ref": "GenerateCSVWorkflowF9F71ED0"
+      }
+     ]
+    ]
+   }
+  }
+ },
+ "Conditions": {
+  "CDKMetadataAvailable": {
+   "Fn::Or": [
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "af-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ca-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-northwest-1"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-3"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "me-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "sa-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-2"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-west-2"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,418 @@
+{
+  "version": "33.0.0",
+  "artifacts": {
+    "DemoQueries.assets": {
+      "type": "cdk:asset-manifest",
+      "properties": {
+        "file": "DemoQueries.assets.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+      }
+    },
+    "DemoQueries": {
+      "type": "aws:cloudformation:stack",
+      "environment": "aws://unknown-account/unknown-region",
+      "properties": {
+        "templateFile": "DemoQueries.template.json",
+        "validateOnSynth": false,
+        "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-${AWS::Region}",
+        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-${AWS::Region}",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/4ff5ceaa4e920c50cd4b5576b0e41ce24d5d93ee3b6bdbe356cd3b02d68f2917.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
+        "additionalDependencies": [
+          "DemoQueries.assets"
+        ],
+        "lookupRole": {
+          "arn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-lookup-role-${AWS::AccountId}-${AWS::Region}",
+          "requiresBootstrapStackVersion": 8,
+          "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+        }
+      },
+      "dependencies": [
+        "DemoQueries.assets"
+      ],
+      "metadata": {
+        "/DemoQueries/TextratcQueries/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextratcQueries0C9ECF26"
+          }
+        ],
+        "/DemoQueries/TextratcQueries/Policy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextratcQueriesPolicy369B7A61"
+          }
+        ],
+        "/DemoQueries/TextratcQueries/AutoDeleteObjectsCustomResource/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextratcQueriesAutoDeleteObjectsCustomResource2507032A"
+          }
+        ],
+        "/DemoQueries/TextratcQueries/Notifications/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextratcQueriesNotificationsA0A8E652"
+          }
+        ],
+        "/DemoQueries/TextratcQueries/AllowBucketNotificationsToDemoQueriesLambdaStartStepFunctionGenericA1CA772D": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextratcQueriesAllowBucketNotificationsToDemoQueriesLambdaStartStepFunctionGenericA1CA772D16B9780E"
+          }
+        ],
+        "/DemoQueries/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+          }
+        ],
+        "/DemoQueries/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F"
+          }
+        ],
+        "/DemoQueries/Queries-Decider/TextractDecider/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "QueriesDeciderTextractDeciderServiceRoleB44E5D67"
+          }
+        ],
+        "/DemoQueries/Queries-Decider/TextractDecider/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "QueriesDeciderTextractDeciderServiceRoleDefaultPolicy90522B63"
+          }
+        ],
+        "/DemoQueries/Queries-Decider/TextractDecider/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "QueriesDeciderTextractDecider945D7F1B"
+          }
+        ],
+        "/DemoQueries/TextractSync/TextractSyncCall/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextractSyncTextractSyncCallServiceRole6D3C7EFA"
+          }
+        ],
+        "/DemoQueries/TextractSync/TextractSyncCall/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextractSyncTextractSyncCallServiceRoleDefaultPolicyE4AC6E4A"
+          }
+        ],
+        "/DemoQueries/TextractSync/TextractSyncCall/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextractSyncTextractSyncCall896FF605"
+          }
+        ],
+        "/DemoQueries/TextractSync/StateMachine/Role/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextractSyncStateMachineRole5EBABE16"
+          }
+        ],
+        "/DemoQueries/TextractSync/StateMachine/Role/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextractSyncStateMachineRoleDefaultPolicyE17AB141"
+          }
+        ],
+        "/DemoQueries/TextractSync/StateMachine/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextractSyncStateMachineD0E35813"
+          }
+        ],
+        "/DemoQueries/TextractAsync/TextractTaskTokenTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextractAsyncTextractTaskTokenTableC036FA29"
+          }
+        ],
+        "/DemoQueries/TextractAsync/TextractAsyncSNSRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextractAsyncTextractAsyncSNSRole3D20F3D6"
+          }
+        ],
+        "/DemoQueries/TextractAsync/TextractAsyncSNS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextractAsyncTextractAsyncSNSBB89DC08"
+          }
+        ],
+        "/DemoQueries/TextractAsync/TextractAsyncCall/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextractAsyncTextractAsyncCallServiceRole5AD11AEF"
+          }
+        ],
+        "/DemoQueries/TextractAsync/TextractAsyncCall/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextractAsyncTextractAsyncCallServiceRoleDefaultPolicy458B5442"
+          }
+        ],
+        "/DemoQueries/TextractAsync/TextractAsyncCall/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextractAsyncTextractAsyncCall644804C6"
+          }
+        ],
+        "/DemoQueries/TextractAsync/TextractAsyncSNSFunction/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextractAsyncTextractAsyncSNSFunctionServiceRole33A95889"
+          }
+        ],
+        "/DemoQueries/TextractAsync/TextractAsyncSNSFunction/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextractAsyncTextractAsyncSNSFunctionServiceRoleDefaultPolicyAD3C2896"
+          }
+        ],
+        "/DemoQueries/TextractAsync/TextractAsyncSNSFunction/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextractAsyncTextractAsyncSNSFunctionFDB63B51"
+          }
+        ],
+        "/DemoQueries/TextractAsync/TextractAsyncSNSFunction/AllowInvoke:DemoQueriesTextractAsyncTextractAsyncSNSCB18A53A": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextractAsyncTextractAsyncSNSFunctionAllowInvokeDemoQueriesTextractAsyncTextractAsyncSNSCB18A53A069225A3"
+          }
+        ],
+        "/DemoQueries/TextractAsync/TextractAsyncSNSFunction/TextractAsyncSNS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextractAsyncTextractAsyncSNSFunctionTextractAsyncSNS0BE323B1"
+          }
+        ],
+        "/DemoQueries/TextractAsync/StateMachine/Role/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextractAsyncStateMachineRoleDF5BF968"
+          }
+        ],
+        "/DemoQueries/TextractAsync/StateMachine/Role/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextractAsyncStateMachineRoleDefaultPolicy042AFF96"
+          }
+        ],
+        "/DemoQueries/TextractAsync/StateMachine/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TextractAsyncStateMachineCD4A0F0B"
+          }
+        ],
+        "/DemoQueries/AsyncToJSON/TextractAsyncToJSON/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AsyncToJSONTextractAsyncToJSONServiceRoleA35D8AED"
+          }
+        ],
+        "/DemoQueries/AsyncToJSON/TextractAsyncToJSON/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AsyncToJSONTextractAsyncToJSONServiceRoleDefaultPolicyBE0E99E0"
+          }
+        ],
+        "/DemoQueries/AsyncToJSON/TextractAsyncToJSON/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AsyncToJSONTextractAsyncToJSONB708C612"
+          }
+        ],
+        "/DemoQueries/RandomIntFunction/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "RandomIntFunctionServiceRoleC1F8DD5D"
+          }
+        ],
+        "/DemoQueries/RandomIntFunction/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "RandomIntFunction4C3C2246"
+          }
+        ],
+        "/DemoQueries/GenerateCsvTask/TextractCSVGenerator/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "GenerateCsvTaskTextractCSVGeneratorServiceRoleB2339073"
+          }
+        ],
+        "/DemoQueries/GenerateCsvTask/TextractCSVGenerator/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "GenerateCsvTaskTextractCSVGeneratorServiceRoleDefaultPolicyD6D080CF"
+          }
+        ],
+        "/DemoQueries/GenerateCsvTask/TextractCSVGenerator/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "GenerateCsvTaskTextractCSVGenerator4A5756C8"
+          }
+        ],
+        "/DemoQueries/GenerateCsvTask/StateMachine/Role/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "GenerateCsvTaskStateMachineRole9250C6CA"
+          }
+        ],
+        "/DemoQueries/GenerateCsvTask/StateMachine/Role/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "GenerateCsvTaskStateMachineRoleDefaultPolicy2A70553F"
+          }
+        ],
+        "/DemoQueries/GenerateCsvTask/StateMachine/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "GenerateCsvTaskStateMachine31118FC3"
+          }
+        ],
+        "/DemoQueries/Queries/Role/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "QueriesRole13380E42"
+          }
+        ],
+        "/DemoQueries/Queries/Role/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "QueriesRoleDefaultPolicyD7CF39AC"
+          }
+        ],
+        "/DemoQueries/Queries/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "QueriesDB6EF58A"
+          }
+        ],
+        "/DemoQueries/LambdaStartStepFunctionGeneric/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LambdaStartStepFunctionGenericServiceRole8447C9A7"
+          }
+        ],
+        "/DemoQueries/LambdaStartStepFunctionGeneric/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LambdaStartStepFunctionGenericServiceRoleDefaultPolicy42660948"
+          }
+        ],
+        "/DemoQueries/LambdaStartStepFunctionGeneric/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LambdaStartStepFunctionGeneric9A1E8F24"
+          }
+        ],
+        "/DemoQueries/LambdaStartStepFunctionGeneric/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LambdaStartStepFunctionGenericLogRetentionCC510937"
+          }
+        ],
+        "/DemoQueries/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC"
+          }
+        ],
+        "/DemoQueries/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36"
+          }
+        ],
+        "/DemoQueries/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691"
+          }
+        ],
+        "/DemoQueries/DocumentUploadLocation": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DocumentUploadLocation"
+          }
+        ],
+        "/DemoQueries/StateMachineARN": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "StateMachineARN"
+          }
+        ],
+        "/DemoQueries/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+          }
+        ],
+        "/DemoQueries/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB"
+          }
+        ],
+        "/DemoQueries/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A"
+          }
+        ],
+        "/DemoQueries/StartStepFunctionLambdaLogGroup": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "StartStepFunctionLambdaLogGroup"
+          }
+        ],
+        "/DemoQueries/StepFunctionFlowLink": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "StepFunctionFlowLink"
+          }
+        ],
+        "/DemoQueries/CDKMetadata/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CDKMetadata"
+          }
+        ],
+        "/DemoQueries/CDKMetadata/Condition": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CDKMetadataAvailable"
+          }
+        ],
+        "/DemoQueries/BootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BootstrapVersion"
+          }
+        ],
+        "/DemoQueries/CheckBootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CheckBootstrapVersion"
+          }
+        ]
+      },
+      "displayName": "DemoQueries"
+    },
+    "Tree": {
+      "type": "cdk:tree",
+      "properties": {
+        "file": "tree.json"
+      }
+    }
+  }
+}

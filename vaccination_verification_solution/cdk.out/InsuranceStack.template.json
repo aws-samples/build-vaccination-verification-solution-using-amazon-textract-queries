@@ -1,0 +1,1614 @@
+{
+ "Description": "IDP CDK constructs sample for A2I (SO9217)",
+ "Resources": {
+  "InsurancePOC652E3FFE": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "Tags": [
+     {
+      "Key": "aws-cdk:auto-delete-objects",
+      "Value": "true"
+     }
+    ]
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/InsurancePOC/Resource"
+   }
+  },
+  "InsurancePOCPolicyE3706C75": {
+   "Type": "AWS::S3::BucketPolicy",
+   "Properties": {
+    "Bucket": {
+     "Ref": "InsurancePOC652E3FFE"
+    },
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:DeleteObject*",
+        "s3:GetBucket*",
+        "s3:List*"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": {
+         "Fn::GetAtt": [
+          "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+          "Arn"
+         ]
+        }
+       },
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "InsurancePOC652E3FFE",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "InsurancePOC652E3FFE",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/InsurancePOC/Policy/Resource"
+   }
+  },
+  "InsurancePOCAutoDeleteObjectsCustomResourceCF05DE26": {
+   "Type": "Custom::S3AutoDeleteObjects",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+      "Arn"
+     ]
+    },
+    "BucketName": {
+     "Ref": "InsurancePOC652E3FFE"
+    }
+   },
+   "DependsOn": [
+    "InsurancePOCPolicyE3706C75"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/InsurancePOC/AutoDeleteObjectsCustomResource/Default"
+   }
+  },
+  "InsurancePOCNotifications74990626": {
+   "Type": "Custom::S3BucketNotifications",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691",
+      "Arn"
+     ]
+    },
+    "BucketName": {
+     "Ref": "InsurancePOC652E3FFE"
+    },
+    "NotificationConfiguration": {
+     "LambdaFunctionConfigurations": [
+      {
+       "Events": [
+        "s3:ObjectCreated:*"
+       ],
+       "Filter": {
+        "Key": {
+         "FilterRules": [
+          {
+           "Name": "prefix",
+           "Value": "insurance-uploads"
+          }
+         ]
+        }
+       },
+       "LambdaFunctionArn": {
+        "Fn::GetAtt": [
+         "LambdaStartStepFunctionInsuranceC9A9EC07",
+         "Arn"
+        ]
+       }
+      }
+     ]
+    },
+    "Managed": true
+   },
+   "DependsOn": [
+    "InsurancePOCAllowBucketNotificationsToInsuranceStackLambdaStartStepFunctionInsuranceE6FBF264A922A7EF"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/InsurancePOC/Notifications/Resource"
+   }
+  },
+  "InsurancePOCAllowBucketNotificationsToInsuranceStackLambdaStartStepFunctionInsuranceE6FBF264A922A7EF": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "LambdaStartStepFunctionInsuranceC9A9EC07",
+      "Arn"
+     ]
+    },
+    "Principal": "s3.amazonaws.com",
+    "SourceAccount": {
+     "Ref": "AWS::AccountId"
+    },
+    "SourceArn": {
+     "Fn::GetAtt": [
+      "InsurancePOC652E3FFE",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/InsurancePOC/AllowBucketNotificationsToInsuranceStackLambdaStartStepFunctionInsuranceE6FBF264"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "a657308e723bb9460b800cb3b47dadb74e28243edfe246bf7755c45ec312eb97.zip"
+    },
+    "Timeout": 900,
+    "MemorySize": 128,
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs18.x",
+    "Description": {
+     "Fn::Join": [
+      "",
+      [
+       "Lambda function for auto-deleting objects in ",
+       {
+        "Ref": "InsurancePOC652E3FFE"
+       },
+       " S3 bucket."
+      ]
+     ]
+    }
+   },
+   "DependsOn": [
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler",
+    "aws:asset:path": "asset.a657308e723bb9460b800cb3b47dadb74e28243edfe246bf7755c45ec312eb97",
+    "aws:asset:property": "Code"
+   }
+  },
+  "InsuranceDeciderTextractDeciderServiceRoleF468696B": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/InsuranceDecider/TextractDecider/ServiceRole/Resource"
+   }
+  },
+  "InsuranceDeciderTextractDeciderServiceRoleDefaultPolicy0F26444A": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:GetObject",
+        "s3:ListBucket"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "InsuranceDeciderTextractDeciderServiceRoleDefaultPolicy0F26444A",
+    "Roles": [
+     {
+      "Ref": "InsuranceDeciderTextractDeciderServiceRoleF468696B"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/InsuranceDecider/TextractDecider/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "InsuranceDeciderTextractDeciderA40485A3": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:c88612b3f3b356d0509c886376bc6c4ea15ae2a67154c9e4a936e6665b2b7bb0"
+     }
+    },
+    "MemorySize": 1024,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "InsuranceDeciderTextractDeciderServiceRoleF468696B",
+      "Arn"
+     ]
+    },
+    "Timeout": 900
+   },
+   "DependsOn": [
+    "InsuranceDeciderTextractDeciderServiceRoleDefaultPolicy0F26444A",
+    "InsuranceDeciderTextractDeciderServiceRoleF468696B"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/InsuranceDecider/TextractDecider/Resource",
+    "aws:asset:path": "asset.c88612b3f3b356d0509c886376bc6c4ea15ae2a67154c9e4a936e6665b2b7bb0",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "TextractSyncOCRInsuranceTextractSyncCallServiceRoleA6F1C8C3": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/TextractSyncOCRInsurance/TextractSyncCall/ServiceRole/Resource"
+   }
+  },
+  "TextractSyncOCRInsuranceTextractSyncCallServiceRoleDefaultPolicy9848CBF3": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:GetObject",
+        "s3:ListBucket",
+        "states:SendTaskFailure",
+        "states:SendTaskSuccess",
+        "textract:Analyze*",
+        "textract:Detect*"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      },
+      {
+       "Action": "s3:PutObject",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "InsurancePOC652E3FFE"
+           },
+           "/textract-output/"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "InsurancePOC652E3FFE"
+           },
+           "/textract-output/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TextractSyncOCRInsuranceTextractSyncCallServiceRoleDefaultPolicy9848CBF3",
+    "Roles": [
+     {
+      "Ref": "TextractSyncOCRInsuranceTextractSyncCallServiceRoleA6F1C8C3"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/TextractSyncOCRInsurance/TextractSyncCall/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "TextractSyncOCRInsuranceTextractSyncCall2A59DD74": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:5525492f43be54f719d6106960578eddda36f32486d7b7f793a98c2e8b74565e"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "S3_OUTPUT_BUCKET": {
+       "Ref": "InsurancePOC652E3FFE"
+      },
+      "S3_OUTPUT_PREFIX": "textract-output",
+      "LOG_LEVEL": "DEBUG",
+      "TEXTRACT_API": "GENERIC"
+     }
+    },
+    "MemorySize": 160,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "TextractSyncOCRInsuranceTextractSyncCallServiceRoleA6F1C8C3",
+      "Arn"
+     ]
+    },
+    "Timeout": 300
+   },
+   "DependsOn": [
+    "TextractSyncOCRInsuranceTextractSyncCallServiceRoleDefaultPolicy9848CBF3",
+    "TextractSyncOCRInsuranceTextractSyncCallServiceRoleA6F1C8C3"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/TextractSyncOCRInsurance/TextractSyncCall/Resource",
+    "aws:asset:path": "asset.5525492f43be54f719d6106960578eddda36f32486d7b7f793a98c2e8b74565e",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "TextractSyncOCRInsuranceStateMachineRole7C01498F": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": {
+         "Fn::Join": [
+          "",
+          [
+           "states.",
+           {
+            "Ref": "AWS::Region"
+           },
+           ".amazonaws.com"
+          ]
+         ]
+        }
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/TextractSyncOCRInsurance/StateMachine/Role/Resource"
+   }
+  },
+  "TextractSyncOCRInsuranceStateMachineRoleDefaultPolicyEE45AF36": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "TextractSyncOCRInsuranceTextractSyncCall2A59DD74",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "TextractSyncOCRInsuranceTextractSyncCall2A59DD74",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TextractSyncOCRInsuranceStateMachineRoleDefaultPolicyEE45AF36",
+    "Roles": [
+     {
+      "Ref": "TextractSyncOCRInsuranceStateMachineRole7C01498F"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/TextractSyncOCRInsurance/StateMachine/Role/DefaultPolicy/Resource"
+   }
+  },
+  "TextractSyncOCRInsuranceStateMachine7CE8299E": {
+   "Type": "AWS::StepFunctions::StateMachine",
+   "Properties": {
+    "DefinitionString": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"StartAt\":\"TextractSyncCallTask\",\"States\":{\"TextractSyncCallTask\":{\"End\":true,\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2},{\"ErrorEquals\":[\"ThrottlingException\",\"LimitExceededException\",\"InternalServerError\",\"ProvisionedThroughputExceededException\",\"Lambda.TooManyRequestsException\",\"ConnectionClosedException\",\"Lambda.Unknown\"],\"IntervalSeconds\":1,\"MaxAttempts\":100,\"BackoffRate\":1.1}],\"Type\":\"Task\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::lambda:invoke\",\"Parameters\":{\"FunctionName\":\"",
+       {
+        "Fn::GetAtt": [
+         "TextractSyncOCRInsuranceTextractSyncCall2A59DD74",
+         "Arn"
+        ]
+       },
+       "\",\"Payload.$\":\"$\"}}},\"TimeoutSeconds\":10368000}"
+      ]
+     ]
+    },
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "TextractSyncOCRInsuranceStateMachineRole7C01498F",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "TextractSyncOCRInsuranceStateMachineRoleDefaultPolicyEE45AF36",
+    "TextractSyncOCRInsuranceStateMachineRole7C01498F"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/TextractSyncOCRInsurance/StateMachine/Resource"
+   }
+  },
+  "TextractA2IA2ITaskTokenTable63B01979": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "ID",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "ID",
+      "KeyType": "HASH"
+     }
+    ],
+    "TimeToLiveSpecification": {
+     "AttributeName": "ttltimestamp",
+     "Enabled": true
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/TextractA2I/A2ITaskTokenTable/Resource"
+   }
+  },
+  "TextractA2IstartA2ICallServiceRoleC0E7EC93": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/TextractA2I/startA2ICall/ServiceRole/Resource"
+   }
+  },
+  "TextractA2IstartA2ICallServiceRoleDefaultPolicyCE683424": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sagemaker:StartHumanLoop",
+       "Effect": "Allow",
+       "Resource": "arn:aws:sagemaker:us-east-1:913165245630:flow-definition/textract-classifiction"
+      },
+      {
+       "Action": [
+        "s3:Get*",
+        "s3:List*",
+        "s3:PutObject",
+        "states:SendTaskFailure",
+        "states:SendTaskSuccess"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      },
+      {
+       "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "TextractA2IA2ITaskTokenTable63B01979",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TextractA2IstartA2ICallServiceRoleDefaultPolicyCE683424",
+    "Roles": [
+     {
+      "Ref": "TextractA2IstartA2ICallServiceRoleC0E7EC93"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/TextractA2I/startA2ICall/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "TextractA2IstartA2ICall39FB24DB": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:062ca4f637f5e7f5298705af03fca88f1a19f1378749cdd981127d5443327705"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "TOKEN_STORE_DDB": {
+       "Ref": "TextractA2IA2ITaskTokenTable63B01979"
+      },
+      "A2I_FLOW_DEFINITION_ARN": "arn:aws:sagemaker:us-east-1:913165245630:flow-definition/textract-classifiction",
+      "LOG_LEVEL": "DEBUG"
+     }
+    },
+    "MemorySize": 128,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "TextractA2IstartA2ICallServiceRoleC0E7EC93",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "TextractA2IstartA2ICallServiceRoleDefaultPolicyCE683424",
+    "TextractA2IstartA2ICallServiceRoleC0E7EC93"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/TextractA2I/startA2ICall/Resource",
+    "aws:asset:path": "asset.062ca4f637f5e7f5298705af03fca88f1a19f1378749cdd981127d5443327705",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "TextractA2IendA2ICallServiceRole2D8F018F": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/TextractA2I/endA2ICall/ServiceRole/Resource"
+   }
+  },
+  "TextractA2IendA2ICallServiceRoleDefaultPolicyF036D3B7": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "states:SendTaskFailure",
+        "states:SendTaskSuccess"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      },
+      {
+       "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "TextractA2IA2ITaskTokenTable63B01979",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TextractA2IendA2ICallServiceRoleDefaultPolicyF036D3B7",
+    "Roles": [
+     {
+      "Ref": "TextractA2IendA2ICallServiceRole2D8F018F"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/TextractA2I/endA2ICall/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "TextractA2IendA2ICall75819636": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:e1afc394fc746dd208eb45bcc483c80a807f0de16738a7e5cc2cf2d72002d322"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "TOKEN_STORE_DDB": {
+       "Ref": "TextractA2IA2ITaskTokenTable63B01979"
+      },
+      "LOG_LEVEL": "DEBUG"
+     }
+    },
+    "MemorySize": 128,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "TextractA2IendA2ICallServiceRole2D8F018F",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "TextractA2IendA2ICallServiceRoleDefaultPolicyF036D3B7",
+    "TextractA2IendA2ICallServiceRole2D8F018F"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/TextractA2I/endA2ICall/Resource",
+    "aws:asset:path": "asset.e1afc394fc746dd208eb45bcc483c80a807f0de16738a7e5cc2cf2d72002d322",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "TextractA2IEventBridgeRule4C0DBA23": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "EventPattern": {
+     "source": [
+      "aws.sagemaker"
+     ],
+     "detail-type": [
+      "SageMaker A2I HumanLoop Status Change"
+     ],
+     "detail": {
+      "humanLoopStatus": [
+       "Completed",
+       "Failed"
+      ],
+      "flowDefinitionArn": [
+       "arn:aws:sagemaker:us-east-1:913165245630:flow-definition/textract-classifiction"
+      ]
+     }
+    },
+    "State": "ENABLED",
+    "Targets": [
+     {
+      "Arn": {
+       "Fn::GetAtt": [
+        "TextractA2IendA2ICall75819636",
+        "Arn"
+       ]
+      },
+      "Id": "Target0"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/TextractA2I/EventBridgeRule/Resource"
+   }
+  },
+  "TextractA2IEventBridgeRuleAllowEventRuleInsuranceStackTextractA2IendA2ICallCC9EEC150EBCDCC2": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "TextractA2IendA2ICall75819636",
+      "Arn"
+     ]
+    },
+    "Principal": "events.amazonaws.com",
+    "SourceArn": {
+     "Fn::GetAtt": [
+      "TextractA2IEventBridgeRule4C0DBA23",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/TextractA2I/EventBridgeRule/AllowEventRuleInsuranceStackTextractA2IendA2ICallCC9EEC15"
+   }
+  },
+  "TextractA2IStateMachineRole953B90F3": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": {
+         "Fn::Join": [
+          "",
+          [
+           "states.",
+           {
+            "Ref": "AWS::Region"
+           },
+           ".amazonaws.com"
+          ]
+         ]
+        }
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/TextractA2I/StateMachine/Role/Resource"
+   }
+  },
+  "TextractA2IStateMachineRoleDefaultPolicyE9236B51": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "TextractA2IstartA2ICall39FB24DB",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "TextractA2IstartA2ICall39FB24DB",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TextractA2IStateMachineRoleDefaultPolicyE9236B51",
+    "Roles": [
+     {
+      "Ref": "TextractA2IStateMachineRole953B90F3"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/TextractA2I/StateMachine/Role/DefaultPolicy/Resource"
+   }
+  },
+  "TextractA2IStateMachineEC1F9A01": {
+   "Type": "AWS::StepFunctions::StateMachine",
+   "Properties": {
+    "DefinitionString": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"StartAt\":\"StartA2ITask\",\"States\":{\"StartA2ITask\":{\"End\":true,\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2}],\"Type\":\"Task\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::lambda:invoke\",\"Parameters\":{\"FunctionName\":\"",
+       {
+        "Fn::GetAtt": [
+         "TextractA2IstartA2ICall39FB24DB",
+         "Arn"
+        ]
+       },
+       "\",\"Payload.$\":\"$\"}}},\"TimeoutSeconds\":7200}"
+      ]
+     ]
+    },
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "TextractA2IStateMachineRole953B90F3",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "TextractA2IStateMachineRoleDefaultPolicyE9236B51",
+    "TextractA2IStateMachineRole953B90F3"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/TextractA2I/StateMachine/Resource"
+   }
+  },
+  "InsuranceRole14385A75": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": {
+         "Fn::Join": [
+          "",
+          [
+           "states.",
+           {
+            "Ref": "AWS::Region"
+           },
+           ".amazonaws.com"
+          ]
+         ]
+        }
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/Insurance/Role/Resource"
+   }
+  },
+  "InsuranceRoleDefaultPolicyC262DBE6": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "InsuranceDeciderTextractDeciderA40485A3",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "InsuranceDeciderTextractDeciderA40485A3",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": "states:StartExecution",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Ref": "TextractA2IStateMachineEC1F9A01"
+        },
+        {
+         "Ref": "TextractSyncOCRInsuranceStateMachine7CE8299E"
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "InsuranceRoleDefaultPolicyC262DBE6",
+    "Roles": [
+     {
+      "Ref": "InsuranceRole14385A75"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/Insurance/Role/DefaultPolicy/Resource"
+   }
+  },
+  "InsuranceB9D5EC45": {
+   "Type": "AWS::StepFunctions::StateMachine",
+   "Properties": {
+    "DefinitionString": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"StartAt\":\"InsuranceDecider\",\"States\":{\"InsuranceDecider\":{\"Next\":\"TextractSyncOCRInsurance\",\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2},{\"ErrorEquals\":[\"Lambda.TooManyRequestsException\",\"Lambda.Unknown\"],\"IntervalSeconds\":1,\"MaxAttempts\":100,\"BackoffRate\":1.1}],\"Type\":\"Task\",\"TimeoutSeconds\":100,\"OutputPath\":\"$.Payload\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::lambda:invoke\",\"Parameters\":{\"FunctionName\":\"",
+       {
+        "Fn::GetAtt": [
+         "InsuranceDeciderTextractDeciderA40485A3",
+         "Arn"
+        ]
+       },
+       "\",\"Payload.$\":\"$\"}},\"TextractSyncOCRInsurance\":{\"Next\":\"TextractA2I\",\"Type\":\"Task\",\"TimeoutSeconds\":86400,\"ResultPath\":\"$.textract_result\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::states:startExecution.waitForTaskToken\",\"Parameters\":{\"Input\":{\"Token.$\":\"$$.Task.Token\",\"ExecutionId.$\":\"$$.Execution.Id\",\"Payload.$\":\"$\"},\"StateMachineArn\":\"",
+       {
+        "Ref": "TextractSyncOCRInsuranceStateMachine7CE8299E"
+       },
+       "\"}},\"TextractA2I\":{\"End\":true,\"Type\":\"Task\",\"TimeoutSeconds\":86400,\"ResultPath\":\"$.a2i_result\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::states:startExecution.waitForTaskToken\",\"Parameters\":{\"Input\":{\"Token.$\":\"$$.Task.Token\",\"ExecutionId.$\":\"$$.Execution.Id\",\"Payload.$\":\"$\"},\"StateMachineArn\":\"",
+       {
+        "Ref": "TextractA2IStateMachineEC1F9A01"
+       },
+       "\"}}}}"
+      ]
+     ]
+    },
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "InsuranceRole14385A75",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "InsuranceRoleDefaultPolicyC262DBE6",
+    "InsuranceRole14385A75"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/Insurance/Resource"
+   }
+  },
+  "LambdaStartStepFunctionInsuranceServiceRole9445B13E": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/LambdaStartStepFunctionInsurance/ServiceRole/Resource"
+   }
+  },
+  "LambdaStartStepFunctionInsuranceServiceRoleDefaultPolicy13D845DA": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "states:StartExecution",
+       "Effect": "Allow",
+       "Resource": {
+        "Ref": "InsuranceB9D5EC45"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "LambdaStartStepFunctionInsuranceServiceRoleDefaultPolicy13D845DA",
+    "Roles": [
+     {
+      "Ref": "LambdaStartStepFunctionInsuranceServiceRole9445B13E"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/LambdaStartStepFunctionInsurance/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "LambdaStartStepFunctionInsuranceC9A9EC07": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:701c2c16e1f08fbd010f5572bab297ba0d065388ffefcddc9e70ec108a029186"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "STATE_MACHINE_ARN": {
+       "Ref": "InsuranceB9D5EC45"
+      }
+     }
+    },
+    "MemorySize": 128,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "LambdaStartStepFunctionInsuranceServiceRole9445B13E",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "LambdaStartStepFunctionInsuranceServiceRoleDefaultPolicy13D845DA",
+    "LambdaStartStepFunctionInsuranceServiceRole9445B13E"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/LambdaStartStepFunctionInsurance/Resource",
+    "aws:asset:path": "asset.701c2c16e1f08fbd010f5572bab297ba0d065388ffefcddc9e70ec108a029186",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/Resource"
+   }
+  },
+  "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "s3:PutBucketNotification",
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36",
+    "Roles": [
+     {
+      "Ref": "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/DefaultPolicy/Resource"
+   }
+  },
+  "BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Description": "AWS CloudFormation handler for \"Custom::S3BucketNotifications\" resources (@aws-cdk/aws-s3)",
+    "Code": {
+     "ZipFile": "import boto3  # type: ignore\nimport json\nimport logging\nimport urllib.request\n\ns3 = boto3.client(\"s3\")\n\nEVENTBRIDGE_CONFIGURATION = 'EventBridgeConfiguration'\n\nCONFIGURATION_TYPES = [\"TopicConfigurations\", \"QueueConfigurations\", \"LambdaFunctionConfigurations\"]\n\ndef handler(event: dict, context):\n  response_status = \"SUCCESS\"\n  error_message = \"\"\n  try:\n    props = event[\"ResourceProperties\"]\n    bucket = props[\"BucketName\"]\n    notification_configuration = props[\"NotificationConfiguration\"]\n    request_type = event[\"RequestType\"]\n    managed = props.get('Managed', 'true').lower() == 'true'\n    stack_id = event['StackId']\n\n    if managed:\n      config = handle_managed(request_type, notification_configuration)\n    else:\n      config = handle_unmanaged(bucket, stack_id, request_type, notification_configuration)\n\n    put_bucket_notification_configuration(bucket, config)\n  except Exception as e:\n    logging.exception(\"Failed to put bucket notification configuration\")\n    response_status = \"FAILED\"\n    error_message = f\"Error: {str(e)}. \"\n  finally:\n    submit_response(event, context, response_status, error_message)\n\ndef handle_managed(request_type, notification_configuration):\n  if request_type == 'Delete':\n    return {}\n  return notification_configuration\n\ndef handle_unmanaged(bucket, stack_id, request_type, notification_configuration):\n  external_notifications = find_external_notifications(bucket, stack_id)\n\n  if request_type == 'Delete':\n    return external_notifications\n\n  def with_id(notification):\n    notification['Id'] = f\"{stack_id}-{hash(json.dumps(notification, sort_keys=True))}\"\n    return notification\n\n  notifications = {}\n  for t in CONFIGURATION_TYPES:\n    external = external_notifications.get(t, [])\n    incoming = [with_id(n) for n in notification_configuration.get(t, [])]\n    notifications[t] = external + incoming\n\n  if EVENTBRIDGE_CONFIGURATION in notification_configuration:\n    notifications[EVENTBRIDGE_CONFIGURATION] = notification_configuration[EVENTBRIDGE_CONFIGURATION]\n  elif EVENTBRIDGE_CONFIGURATION in external_notifications:\n    notifications[EVENTBRIDGE_CONFIGURATION] = external_notifications[EVENTBRIDGE_CONFIGURATION]\n\n  return notifications\n\ndef find_external_notifications(bucket, stack_id):\n  existing_notifications = get_bucket_notification_configuration(bucket)\n  external_notifications = {}\n  for t in CONFIGURATION_TYPES:\n    external_notifications[t] = [n for n in existing_notifications.get(t, []) if not n['Id'].startswith(f\"{stack_id}-\")]\n\n  if EVENTBRIDGE_CONFIGURATION in existing_notifications:\n    external_notifications[EVENTBRIDGE_CONFIGURATION] = existing_notifications[EVENTBRIDGE_CONFIGURATION]\n\n  return external_notifications\n\ndef get_bucket_notification_configuration(bucket):\n  return s3.get_bucket_notification_configuration(Bucket=bucket)\n\ndef put_bucket_notification_configuration(bucket, notification_configuration):\n  s3.put_bucket_notification_configuration(Bucket=bucket, NotificationConfiguration=notification_configuration)\n\ndef submit_response(event: dict, context, response_status: str, error_message: str):\n  response_body = json.dumps(\n    {\n      \"Status\": response_status,\n      \"Reason\": f\"{error_message}See the details in CloudWatch Log Stream: {context.log_stream_name}\",\n      \"PhysicalResourceId\": event.get(\"PhysicalResourceId\") or event[\"LogicalResourceId\"],\n      \"StackId\": event[\"StackId\"],\n      \"RequestId\": event[\"RequestId\"],\n      \"LogicalResourceId\": event[\"LogicalResourceId\"],\n      \"NoEcho\": False,\n    }\n  ).encode(\"utf-8\")\n  headers = {\"content-type\": \"\", \"content-length\": str(len(response_body))}\n  try:\n    req = urllib.request.Request(url=event[\"ResponseURL\"], headers=headers, data=response_body, method=\"PUT\")\n    with urllib.request.urlopen(req) as response:\n      print(response.read().decode(\"utf-8\"))\n    print(\"Status code: \" + response.reason)\n  except Exception as e:\n      print(\"send(..) failed executing request.urlopen(..): \" + str(e))\n"
+    },
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.9",
+    "Timeout": 300
+   },
+   "DependsOn": [
+    "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36",
+    "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/11RwU7DMAz9lt3TwJgE4siGkCaBqAr3KUu9zrSJqzgZqqr+O2m6scLJz+859rNzJx+X8nahvjnTZZ01uJf9h1e6FpHa9byS/TroGrzYHOwZTSGnBnV3pad8EI0y+1LJPgo5OIPMSFY8U6xxW6MqeAlW+5GLFRc8CFRG9gU1MNIpXgdcWoN2O8UMnuWs39PIjJosoCVGT65bKwbBHtrDeQDvvOKa5Wtyt7Unqv8VpL09vCl9RJtczPNBlJ1Vhsp4n0+1n2wmEG2dwEZLfRHO7mMcBrEJ7MkUwBScnoRf/EfKHZ2wBCfSJnFqhbYS84fvwbchfcGGbInTxfLOH8nerOSDXN4vvhgxc8F6NCCLKf4ALOS87d0BAAA="
+   },
+   "Metadata": {
+    "aws:cdk:path": "InsuranceStack/CDKMetadata/Default"
+   },
+   "Condition": "CDKMetadataAvailable"
+  }
+ },
+ "Outputs": {
+  "DocumentUploadLocationInsurance": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "s3://",
+      {
+       "Ref": "InsurancePOC652E3FFE"
+      },
+      "/insurance-uploads/"
+     ]
+    ]
+   }
+  },
+  "StepFunctionFlowLink": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Ref": "AWS::Region"
+      },
+      ".console.aws.amazon.com/states/home?region=",
+      {
+       "Ref": "AWS::Region"
+      },
+      "#/statemachines/view/",
+      {
+       "Ref": "InsuranceB9D5EC45"
+      }
+     ]
+    ]
+   }
+  }
+ },
+ "Conditions": {
+  "CDKMetadataAvailable": {
+   "Fn::Or": [
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "af-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ca-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-northwest-1"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-3"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "me-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "sa-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-2"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-west-2"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

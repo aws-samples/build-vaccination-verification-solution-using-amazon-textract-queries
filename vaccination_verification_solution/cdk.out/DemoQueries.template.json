@@ -1,0 +1,2592 @@
+{
+ "Description": "IDP CDK constructs sample to demo Textract Queries feature  (SO9217)",
+ "Resources": {
+  "TextratcQueries0C9ECF26": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "BucketEncryption": {
+     "ServerSideEncryptionConfiguration": [
+      {
+       "ServerSideEncryptionByDefault": {
+        "SSEAlgorithm": "AES256"
+       }
+      }
+     ]
+    },
+    "PublicAccessBlockConfiguration": {
+     "BlockPublicAcls": true,
+     "BlockPublicPolicy": true,
+     "IgnorePublicAcls": true,
+     "RestrictPublicBuckets": true
+    },
+    "Tags": [
+     {
+      "Key": "aws-cdk:auto-delete-objects",
+      "Value": "true"
+     }
+    ]
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextratcQueries/Resource",
+    "cdk_nag": {
+     "rules_to_suppress": [
+      {
+       "reason": "POC setup does not require logging",
+       "id": "AwsSolutions-S1"
+      }
+     ]
+    }
+   }
+  },
+  "TextratcQueriesPolicy369B7A61": {
+   "Type": "AWS::S3::BucketPolicy",
+   "Properties": {
+    "Bucket": {
+     "Ref": "TextratcQueries0C9ECF26"
+    },
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "s3:*",
+       "Condition": {
+        "Bool": {
+         "aws:SecureTransport": "false"
+        }
+       },
+       "Effect": "Deny",
+       "Principal": {
+        "AWS": "*"
+       },
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "TextratcQueries0C9ECF26",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "TextratcQueries0C9ECF26",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "s3:DeleteObject*",
+        "s3:GetBucket*",
+        "s3:List*"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": {
+         "Fn::GetAtt": [
+          "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+          "Arn"
+         ]
+        }
+       },
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "TextratcQueries0C9ECF26",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "TextratcQueries0C9ECF26",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextratcQueries/Policy/Resource"
+   }
+  },
+  "TextratcQueriesAutoDeleteObjectsCustomResource2507032A": {
+   "Type": "Custom::S3AutoDeleteObjects",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+      "Arn"
+     ]
+    },
+    "BucketName": {
+     "Ref": "TextratcQueries0C9ECF26"
+    }
+   },
+   "DependsOn": [
+    "TextratcQueriesPolicy369B7A61"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextratcQueries/AutoDeleteObjectsCustomResource/Default"
+   }
+  },
+  "TextratcQueriesNotificationsA0A8E652": {
+   "Type": "Custom::S3BucketNotifications",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691",
+      "Arn"
+     ]
+    },
+    "BucketName": {
+     "Ref": "TextratcQueries0C9ECF26"
+    },
+    "NotificationConfiguration": {
+     "LambdaFunctionConfigurations": [
+      {
+       "Events": [
+        "s3:ObjectCreated:*"
+       ],
+       "Filter": {
+        "Key": {
+         "FilterRules": [
+          {
+           "Name": "prefix",
+           "Value": "uploads"
+          }
+         ]
+        }
+       },
+       "LambdaFunctionArn": {
+        "Fn::GetAtt": [
+         "LambdaStartStepFunctionGeneric9A1E8F24",
+         "Arn"
+        ]
+       }
+      }
+     ]
+    },
+    "Managed": true
+   },
+   "DependsOn": [
+    "TextratcQueriesAllowBucketNotificationsToDemoQueriesLambdaStartStepFunctionGenericA1CA772D16B9780E"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextratcQueries/Notifications/Resource"
+   }
+  },
+  "TextratcQueriesAllowBucketNotificationsToDemoQueriesLambdaStartStepFunctionGenericA1CA772D16B9780E": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "LambdaStartStepFunctionGeneric9A1E8F24",
+      "Arn"
+     ]
+    },
+    "Principal": "s3.amazonaws.com",
+    "SourceAccount": {
+     "Ref": "AWS::AccountId"
+    },
+    "SourceArn": {
+     "Fn::GetAtt": [
+      "TextratcQueries0C9ECF26",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextratcQueries/AllowBucketNotificationsToDemoQueriesLambdaStartStepFunctionGenericA1CA772D"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "a657308e723bb9460b800cb3b47dadb74e28243edfe246bf7755c45ec312eb97.zip"
+    },
+    "Timeout": 900,
+    "MemorySize": 128,
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs18.x",
+    "Description": {
+     "Fn::Join": [
+      "",
+      [
+       "Lambda function for auto-deleting objects in ",
+       {
+        "Ref": "TextratcQueries0C9ECF26"
+       },
+       " S3 bucket."
+      ]
+     ]
+    }
+   },
+   "DependsOn": [
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler",
+    "aws:asset:path": "asset.a657308e723bb9460b800cb3b47dadb74e28243edfe246bf7755c45ec312eb97",
+    "aws:asset:property": "Code"
+   }
+  },
+  "QueriesDeciderTextractDeciderServiceRoleB44E5D67": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/Queries-Decider/TextractDecider/ServiceRole/Resource"
+   }
+  },
+  "QueriesDeciderTextractDeciderServiceRoleDefaultPolicy90522B63": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:GetObject",
+        "s3:ListBucket"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextratcQueries0C9ECF26"
+           },
+           "/uploads/"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextratcQueries0C9ECF26"
+           },
+           "/uploads/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "QueriesDeciderTextractDeciderServiceRoleDefaultPolicy90522B63",
+    "Roles": [
+     {
+      "Ref": "QueriesDeciderTextractDeciderServiceRoleB44E5D67"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/Queries-Decider/TextractDecider/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "QueriesDeciderTextractDecider945D7F1B": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:c88612b3f3b356d0509c886376bc6c4ea15ae2a67154c9e4a936e6665b2b7bb0"
+     }
+    },
+    "MemorySize": 1024,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "QueriesDeciderTextractDeciderServiceRoleB44E5D67",
+      "Arn"
+     ]
+    },
+    "Timeout": 900
+   },
+   "DependsOn": [
+    "QueriesDeciderTextractDeciderServiceRoleDefaultPolicy90522B63",
+    "QueriesDeciderTextractDeciderServiceRoleB44E5D67"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/Queries-Decider/TextractDecider/Resource",
+    "aws:asset:path": "asset.c88612b3f3b356d0509c886376bc6c4ea15ae2a67154c9e4a936e6665b2b7bb0",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "TextractSyncTextractSyncCallServiceRole6D3C7EFA": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextractSync/TextractSyncCall/ServiceRole/Resource"
+   }
+  },
+  "TextractSyncTextractSyncCallServiceRoleDefaultPolicyE4AC6E4A": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "states:SendTaskFailure",
+        "states:SendTaskSuccess",
+        "textract:Analyze*",
+        "textract:Detect*"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      },
+      {
+       "Action": [
+        "s3:GetObject",
+        "s3:ListBucket"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextratcQueries0C9ECF26"
+           },
+           "/uploads/"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextratcQueries0C9ECF26"
+           },
+           "/uploads/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": "s3:PutObject",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextratcQueries0C9ECF26"
+           },
+           "/textract-output/"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextratcQueries0C9ECF26"
+           },
+           "/textract-output/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TextractSyncTextractSyncCallServiceRoleDefaultPolicyE4AC6E4A",
+    "Roles": [
+     {
+      "Ref": "TextractSyncTextractSyncCallServiceRole6D3C7EFA"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextractSync/TextractSyncCall/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "TextractSyncTextractSyncCall896FF605": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:5525492f43be54f719d6106960578eddda36f32486d7b7f793a98c2e8b74565e"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "S3_OUTPUT_BUCKET": {
+       "Ref": "TextratcQueries0C9ECF26"
+      },
+      "S3_OUTPUT_PREFIX": "textract-output",
+      "LOG_LEVEL": "DEBUG",
+      "TEXTRACT_API": "GENERIC"
+     }
+    },
+    "MemorySize": 160,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "TextractSyncTextractSyncCallServiceRole6D3C7EFA",
+      "Arn"
+     ]
+    },
+    "Timeout": 300
+   },
+   "DependsOn": [
+    "TextractSyncTextractSyncCallServiceRoleDefaultPolicyE4AC6E4A",
+    "TextractSyncTextractSyncCallServiceRole6D3C7EFA"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextractSync/TextractSyncCall/Resource",
+    "aws:asset:path": "asset.5525492f43be54f719d6106960578eddda36f32486d7b7f793a98c2e8b74565e",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "TextractSyncStateMachineRole5EBABE16": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": {
+         "Fn::Join": [
+          "",
+          [
+           "states.",
+           {
+            "Ref": "AWS::Region"
+           },
+           ".amazonaws.com"
+          ]
+         ]
+        }
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextractSync/StateMachine/Role/Resource"
+   }
+  },
+  "TextractSyncStateMachineRoleDefaultPolicyE17AB141": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "TextractSyncTextractSyncCall896FF605",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "TextractSyncTextractSyncCall896FF605",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TextractSyncStateMachineRoleDefaultPolicyE17AB141",
+    "Roles": [
+     {
+      "Ref": "TextractSyncStateMachineRole5EBABE16"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextractSync/StateMachine/Role/DefaultPolicy/Resource"
+   }
+  },
+  "TextractSyncStateMachineD0E35813": {
+   "Type": "AWS::StepFunctions::StateMachine",
+   "Properties": {
+    "DefinitionString": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"StartAt\":\"TextractSyncCallTask\",\"States\":{\"TextractSyncCallTask\":{\"End\":true,\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2},{\"ErrorEquals\":[\"ThrottlingException\",\"LimitExceededException\",\"InternalServerError\",\"ProvisionedThroughputExceededException\",\"Lambda.TooManyRequestsException\",\"ConnectionClosedException\",\"Lambda.Unknown\"],\"IntervalSeconds\":1,\"MaxAttempts\":100,\"BackoffRate\":1.1}],\"Type\":\"Task\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::lambda:invoke\",\"Parameters\":{\"FunctionName\":\"",
+       {
+        "Fn::GetAtt": [
+         "TextractSyncTextractSyncCall896FF605",
+         "Arn"
+        ]
+       },
+       "\",\"Payload.$\":\"$\"}}},\"TimeoutSeconds\":10368000}"
+      ]
+     ]
+    },
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "TextractSyncStateMachineRole5EBABE16",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "TextractSyncStateMachineRoleDefaultPolicyE17AB141",
+    "TextractSyncStateMachineRole5EBABE16"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextractSync/StateMachine/Resource"
+   }
+  },
+  "TextractAsyncTextractTaskTokenTableC036FA29": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "ID",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "ID",
+      "KeyType": "HASH"
+     }
+    ],
+    "TimeToLiveSpecification": {
+     "AttributeName": "ttltimestamp",
+     "Enabled": true
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextractAsync/TextractTaskTokenTable/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSRole3D20F3D6": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "textract.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/AmazonSQSFullAccess"
+       ]
+      ]
+     },
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/AmazonSNSFullAccess"
+       ]
+      ]
+     },
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/AmazonS3ReadOnlyAccess"
+       ]
+      ]
+     },
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/AmazonTextractFullAccess"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextractAsync/TextractAsyncSNSRole/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSBB89DC08": {
+   "Type": "AWS::SNS::Topic",
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextractAsync/TextractAsyncSNS/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncCallServiceRole5AD11AEF": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextractAsync/TextractAsyncCall/ServiceRole/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncCallServiceRoleDefaultPolicy458B5442": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "states:SendTaskFailure",
+        "textract:Get*",
+        "textract:Start*"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      },
+      {
+       "Action": "s3:GetObject",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextratcQueries0C9ECF26"
+           },
+           "/*"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextratcQueries0C9ECF26"
+           },
+           "/uploads/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": "s3:ListBucket",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:s3:::",
+          {
+           "Ref": "TextratcQueries0C9ECF26"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "Action": "s3:PutObject",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextratcQueries0C9ECF26"
+           },
+           "/textract-temp-output/"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextratcQueries0C9ECF26"
+           },
+           "/textract-temp-output/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "TextractAsyncTextractTaskTokenTableC036FA29",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TextractAsyncTextractAsyncCallServiceRoleDefaultPolicy458B5442",
+    "Roles": [
+     {
+      "Ref": "TextractAsyncTextractAsyncCallServiceRole5AD11AEF"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextractAsync/TextractAsyncCall/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncCall644804C6": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:d52863a8a715725aea86e462bd1b6e554c84642dd1171d335cc7205622c342d1"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "NOTIFICATION_SNS": {
+       "Ref": "TextractAsyncTextractAsyncSNSBB89DC08"
+      },
+      "NOTIFICATION_ROLE_ARN": {
+       "Fn::GetAtt": [
+        "TextractAsyncTextractAsyncSNSRole3D20F3D6",
+        "Arn"
+       ]
+      },
+      "TOKEN_STORE_DDB": {
+       "Ref": "TextractAsyncTextractTaskTokenTableC036FA29"
+      },
+      "S3_OUTPUT_BUCKET": {
+       "Ref": "TextratcQueries0C9ECF26"
+      },
+      "S3_TEMP_OUTPUT_PREFIX": "textract-temp-output",
+      "LOG_LEVEL": "DEBUG",
+      "TEXTRACT_API": "GENERIC"
+     }
+    },
+    "MemorySize": 512,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncCallServiceRole5AD11AEF",
+      "Arn"
+     ]
+    },
+    "Timeout": 300
+   },
+   "DependsOn": [
+    "TextractAsyncTextractAsyncCallServiceRoleDefaultPolicy458B5442",
+    "TextractAsyncTextractAsyncCallServiceRole5AD11AEF"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextractAsync/TextractAsyncCall/Resource",
+    "aws:asset:path": "asset.d52863a8a715725aea86e462bd1b6e554c84642dd1171d335cc7205622c342d1",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionServiceRole33A95889": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextractAsync/TextractAsyncSNSFunction/ServiceRole/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionServiceRoleDefaultPolicyAD3C2896": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "dynamodb:GetItem",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "TextractAsyncTextractTaskTokenTableC036FA29",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "states:SendTaskFailure",
+        "states:SendTaskSuccess"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TextractAsyncTextractAsyncSNSFunctionServiceRoleDefaultPolicyAD3C2896",
+    "Roles": [
+     {
+      "Ref": "TextractAsyncTextractAsyncSNSFunctionServiceRole33A95889"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextractAsync/TextractAsyncSNSFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionFDB63B51": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:bb5b52a2747496721293f581a5e4f818e69024d4f98085f9f0bc94865c37b01c"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "TOKEN_STORE_DDB": {
+       "Ref": "TextractAsyncTextractTaskTokenTableC036FA29"
+      },
+      "S3_OUTPUT_BUCKET": {
+       "Ref": "TextratcQueries0C9ECF26"
+      },
+      "S3_TEMP_OUTPUT_PREFIX": "textract-temp-output",
+      "TEXTRACT_API": "GENERIC",
+      "LOG_LEVEL": "DEBUG"
+     }
+    },
+    "MemorySize": 128,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncSNSFunctionServiceRole33A95889",
+      "Arn"
+     ]
+    },
+    "Timeout": 900
+   },
+   "DependsOn": [
+    "TextractAsyncTextractAsyncSNSFunctionServiceRoleDefaultPolicyAD3C2896",
+    "TextractAsyncTextractAsyncSNSFunctionServiceRole33A95889"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextractAsync/TextractAsyncSNSFunction/Resource",
+    "aws:asset:path": "asset.bb5b52a2747496721293f581a5e4f818e69024d4f98085f9f0bc94865c37b01c",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionAllowInvokeDemoQueriesTextractAsyncTextractAsyncSNSCB18A53A069225A3": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncSNSFunctionFDB63B51",
+      "Arn"
+     ]
+    },
+    "Principal": "sns.amazonaws.com",
+    "SourceArn": {
+     "Ref": "TextractAsyncTextractAsyncSNSBB89DC08"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextractAsync/TextractAsyncSNSFunction/AllowInvoke:DemoQueriesTextractAsyncTextractAsyncSNSCB18A53A"
+   }
+  },
+  "TextractAsyncTextractAsyncSNSFunctionTextractAsyncSNS0BE323B1": {
+   "Type": "AWS::SNS::Subscription",
+   "Properties": {
+    "Endpoint": {
+     "Fn::GetAtt": [
+      "TextractAsyncTextractAsyncSNSFunctionFDB63B51",
+      "Arn"
+     ]
+    },
+    "Protocol": "lambda",
+    "TopicArn": {
+     "Ref": "TextractAsyncTextractAsyncSNSBB89DC08"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextractAsync/TextractAsyncSNSFunction/TextractAsyncSNS/Resource"
+   }
+  },
+  "TextractAsyncStateMachineRoleDF5BF968": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": {
+         "Fn::Join": [
+          "",
+          [
+           "states.",
+           {
+            "Ref": "AWS::Region"
+           },
+           ".amazonaws.com"
+          ]
+         ]
+        }
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextractAsync/StateMachine/Role/Resource"
+   }
+  },
+  "TextractAsyncStateMachineRoleDefaultPolicy042AFF96": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "TextractAsyncTextractAsyncCall644804C6",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "TextractAsyncTextractAsyncCall644804C6",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "TextractAsyncStateMachineRoleDefaultPolicy042AFF96",
+    "Roles": [
+     {
+      "Ref": "TextractAsyncStateMachineRoleDF5BF968"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextractAsync/StateMachine/Role/DefaultPolicy/Resource"
+   }
+  },
+  "TextractAsyncStateMachineCD4A0F0B": {
+   "Type": "AWS::StepFunctions::StateMachine",
+   "Properties": {
+    "DefinitionString": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"StartAt\":\"TextractAsyncCallTask\",\"States\":{\"TextractAsyncCallTask\":{\"End\":true,\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2},{\"ErrorEquals\":[\"ThrottlingException\",\"LimitExceededException\",\"InternalServerError\",\"ProvisionedThroughputExceededException\",\"Lambda.TooManyRequestsException\",\"ConnectionClosedException\",\"Lambda.Unknown\"],\"IntervalSeconds\":1,\"MaxAttempts\":100,\"BackoffRate\":1.1}],\"Type\":\"Task\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::lambda:invoke\",\"Parameters\":{\"FunctionName\":\"",
+       {
+        "Fn::GetAtt": [
+         "TextractAsyncTextractAsyncCall644804C6",
+         "Arn"
+        ]
+       },
+       "\",\"Payload.$\":\"$\"}}},\"TimeoutSeconds\":10368000}"
+      ]
+     ]
+    },
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "TextractAsyncStateMachineRoleDF5BF968",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "TextractAsyncStateMachineRoleDefaultPolicy042AFF96",
+    "TextractAsyncStateMachineRoleDF5BF968"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/TextractAsync/StateMachine/Resource"
+   }
+  },
+  "AsyncToJSONTextractAsyncToJSONServiceRoleA35D8AED": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/AsyncToJSON/TextractAsyncToJSON/ServiceRole/Resource"
+   }
+  },
+  "AsyncToJSONTextractAsyncToJSONServiceRoleDefaultPolicyBE0E99E0": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "s3:GetObject",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:s3:::",
+          {
+           "Ref": "TextratcQueries0C9ECF26"
+          },
+          "/textract-temp-output/*"
+         ]
+        ]
+       }
+      },
+      {
+       "Action": "s3:ListBucket",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:s3:::",
+          {
+           "Ref": "TextratcQueries0C9ECF26"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "Action": "s3:PutObject",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextratcQueries0C9ECF26"
+           },
+           "/textract-output/"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextratcQueries0C9ECF26"
+           },
+           "/textract-output/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "AsyncToJSONTextractAsyncToJSONServiceRoleDefaultPolicyBE0E99E0",
+    "Roles": [
+     {
+      "Ref": "AsyncToJSONTextractAsyncToJSONServiceRoleA35D8AED"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/AsyncToJSON/TextractAsyncToJSON/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "AsyncToJSONTextractAsyncToJSONB708C612": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:2941b022fa5b0c7498d53d8a01c9c7c80a8c5286a64ed22bc0122c0b714ab7da"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "S3_OUTPUT_BUCKET": {
+       "Ref": "TextratcQueries0C9ECF26"
+      },
+      "S3_OUTPUT_PREFIX": "textract-output",
+      "LOG_LEVEL": "DEBUG",
+      "TEXTRACT_API": "GENERIC"
+     }
+    },
+    "MemorySize": 10240,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "AsyncToJSONTextractAsyncToJSONServiceRoleA35D8AED",
+      "Arn"
+     ]
+    },
+    "Timeout": 900
+   },
+   "DependsOn": [
+    "AsyncToJSONTextractAsyncToJSONServiceRoleDefaultPolicyBE0E99E0",
+    "AsyncToJSONTextractAsyncToJSONServiceRoleA35D8AED"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/AsyncToJSON/TextractAsyncToJSON/Resource",
+    "aws:asset:path": "asset.2941b022fa5b0c7498d53d8a01c9c7c80a8c5286a64ed22bc0122c0b714ab7da",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "RandomIntFunctionServiceRoleC1F8DD5D": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/RandomIntFunction/ServiceRole/Resource"
+   }
+  },
+  "RandomIntFunction4C3C2246": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:cad7569631943bcf61a87459d886bb010684bba637221a53d893f59c29984f11"
+     }
+    },
+    "MemorySize": 128,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "RandomIntFunctionServiceRoleC1F8DD5D",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "RandomIntFunctionServiceRoleC1F8DD5D"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/RandomIntFunction/Resource",
+    "aws:asset:path": "asset.cad7569631943bcf61a87459d886bb010684bba637221a53d893f59c29984f11",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "GenerateCsvTaskTextractCSVGeneratorServiceRoleB2339073": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/GenerateCsvTask/TextractCSVGenerator/ServiceRole/Resource"
+   }
+  },
+  "GenerateCsvTaskTextractCSVGeneratorServiceRoleDefaultPolicyD6D080CF": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "s3:GetObject",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:s3:::",
+          {
+           "Ref": "TextratcQueries0C9ECF26"
+          },
+          "/textract-output/*"
+         ]
+        ]
+       }
+      },
+      {
+       "Action": "s3:ListBucket",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          "arn:aws:s3:::",
+          {
+           "Ref": "TextratcQueries0C9ECF26"
+          }
+         ]
+        ]
+       }
+      },
+      {
+       "Action": "s3:PutObject",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextratcQueries0C9ECF26"
+           },
+           "/csv-output/"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           "arn:aws:s3:::",
+           {
+            "Ref": "TextratcQueries0C9ECF26"
+           },
+           "/csv-output/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "states:SendTaskFailure",
+        "states:SendTaskSuccess"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "GenerateCsvTaskTextractCSVGeneratorServiceRoleDefaultPolicyD6D080CF",
+    "Roles": [
+     {
+      "Ref": "GenerateCsvTaskTextractCSVGeneratorServiceRoleB2339073"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/GenerateCsvTask/TextractCSVGenerator/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "GenerateCsvTaskTextractCSVGenerator4A5756C8": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:35896a31a429d7e80cdecdd32ab580e543a3b40ff9b9c00d6aa10ae1f7538749"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "CSV_S3_OUTPUT_BUCKET": {
+       "Ref": "TextratcQueries0C9ECF26"
+      },
+      "CSV_S3_OUTPUT_PREFIX": "csv-output",
+      "LOG_LEVEL": "DEBUG",
+      "OUTPUT_TYPE": "CSV",
+      "OUTPUT_FEATURES": "FORMS,QUERIES,SIGNATURES,TABLES",
+      "OPENSEARCH_INDEX": "my-index",
+      "TEXTRACT_API": "GENERIC",
+      "META_DATA_TO_APPEND": ""
+     }
+    },
+    "MemorySize": 1048,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "GenerateCsvTaskTextractCSVGeneratorServiceRoleB2339073",
+      "Arn"
+     ]
+    },
+    "Timeout": 300
+   },
+   "DependsOn": [
+    "GenerateCsvTaskTextractCSVGeneratorServiceRoleDefaultPolicyD6D080CF",
+    "GenerateCsvTaskTextractCSVGeneratorServiceRoleB2339073"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/GenerateCsvTask/TextractCSVGenerator/Resource",
+    "aws:asset:path": "asset.35896a31a429d7e80cdecdd32ab580e543a3b40ff9b9c00d6aa10ae1f7538749",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "GenerateCsvTaskStateMachineRole9250C6CA": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": {
+         "Fn::Join": [
+          "",
+          [
+           "states.",
+           {
+            "Ref": "AWS::Region"
+           },
+           ".amazonaws.com"
+          ]
+         ]
+        }
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/GenerateCsvTask/StateMachine/Role/Resource"
+   }
+  },
+  "GenerateCsvTaskStateMachineRoleDefaultPolicy2A70553F": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "GenerateCsvTaskTextractCSVGenerator4A5756C8",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "GenerateCsvTaskTextractCSVGenerator4A5756C8",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "GenerateCsvTaskStateMachineRoleDefaultPolicy2A70553F",
+    "Roles": [
+     {
+      "Ref": "GenerateCsvTaskStateMachineRole9250C6CA"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/GenerateCsvTask/StateMachine/Role/DefaultPolicy/Resource"
+   }
+  },
+  "GenerateCsvTaskStateMachine31118FC3": {
+   "Type": "AWS::StepFunctions::StateMachine",
+   "Properties": {
+    "DefinitionString": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"StartAt\":\"csvGeneratorInvoke\",\"States\":{\"csvGeneratorInvoke\":{\"End\":true,\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2},{\"ErrorEquals\":[\"Lambda.TooManyRequestsException\",\"Lambda.Unknown\"],\"IntervalSeconds\":1,\"MaxAttempts\":100,\"BackoffRate\":1.1}],\"Type\":\"Task\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::lambda:invoke\",\"Parameters\":{\"FunctionName\":\"",
+       {
+        "Fn::GetAtt": [
+         "GenerateCsvTaskTextractCSVGenerator4A5756C8",
+         "Arn"
+        ]
+       },
+       "\",\"Payload.$\":\"$\"}}}}"
+      ]
+     ]
+    },
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "GenerateCsvTaskStateMachineRole9250C6CA",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "GenerateCsvTaskStateMachineRoleDefaultPolicy2A70553F",
+    "GenerateCsvTaskStateMachineRole9250C6CA"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/GenerateCsvTask/StateMachine/Resource"
+   }
+  },
+  "QueriesRole13380E42": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": {
+         "Fn::Join": [
+          "",
+          [
+           "states.",
+           {
+            "Ref": "AWS::Region"
+           },
+           ".amazonaws.com"
+          ]
+         ]
+        }
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/Queries/Role/Resource"
+   }
+  },
+  "QueriesRoleDefaultPolicyD7CF39AC": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "AsyncToJSONTextractAsyncToJSONB708C612",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "QueriesDeciderTextractDecider945D7F1B",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "RandomIntFunction4C3C2246",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "AsyncToJSONTextractAsyncToJSONB708C612",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "QueriesDeciderTextractDecider945D7F1B",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "RandomIntFunction4C3C2246",
+             "Arn"
+            ]
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": "states:StartExecution",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Ref": "GenerateCsvTaskStateMachine31118FC3"
+        },
+        {
+         "Ref": "TextractAsyncStateMachineCD4A0F0B"
+        },
+        {
+         "Ref": "TextractSyncStateMachineD0E35813"
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "QueriesRoleDefaultPolicyD7CF39AC",
+    "Roles": [
+     {
+      "Ref": "QueriesRole13380E42"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/Queries/Role/DefaultPolicy/Resource"
+   }
+  },
+  "QueriesDB6EF58A": {
+   "Type": "AWS::StepFunctions::StateMachine",
+   "Properties": {
+    "DefinitionString": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"StartAt\":\"Queries-Decider\",\"States\":{\"Queries-Decider\":{\"Next\":\"NumberQueriesAndPagesChoice\",\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2},{\"ErrorEquals\":[\"Lambda.TooManyRequestsException\",\"Lambda.Unknown\"],\"IntervalSeconds\":1,\"MaxAttempts\":100,\"BackoffRate\":1.1}],\"Type\":\"Task\",\"TimeoutSeconds\":100,\"OutputPath\":\"$.Payload\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::lambda:invoke\",\"Parameters\":{\"FunctionName\":\"",
+       {
+        "Fn::GetAtt": [
+         "QueriesDeciderTextractDecider945D7F1B",
+         "Arn"
+        ]
+       },
+       "\",\"Payload.$\":\"$\"}},\"NumberQueriesAndPagesChoice\":{\"Type\":\"Choice\",\"Choices\":[{\"Or\":[{\"And\":[{\"Variable\":\"$.numberOfQueries\",\"IsPresent\":true},{\"Variable\":\"$.numberOfQueries\",\"NumericGreaterThan\":15},{\"Variable\":\"$.numberOfQueries\",\"NumericLessThan\":31}]},{\"And\":[{\"Variable\":\"$.numberOfPages\",\"IsPresent\":true},{\"Variable\":\"$.numberOfPages\",\"NumericGreaterThan\":1},{\"Variable\":\"$.numberOfPages\",\"NumericLessThanEquals\":3000}]}],\"Next\":\"TextractAsync\"},{\"Or\":[{\"And\":[{\"Variable\":\"$.numberOfQueries\",\"IsPresent\":true},{\"Variable\":\"$.numberOfQueries\",\"NumericGreaterThan\":30}]},{\"And\":[{\"Variable\":\"$.numberOfPages\",\"IsPresent\":true},{\"Variable\":\"$.numberOfPages\",\"NumericGreaterThan\":3000}]}],\"Next\":\"TooManyQueriesOrPages\"}],\"Default\":\"Randomize\"},\"Randomize\":{\"Next\":\"Choice\",\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2}],\"Type\":\"Task\",\"TimeoutSeconds\":900,\"ResultPath\":\"$.Random\",\"Resource\":\"",
+       {
+        "Fn::GetAtt": [
+         "RandomIntFunction4C3C2246",
+         "Arn"
+        ]
+       },
+       "\"},\"Choice\":{\"Type\":\"Choice\",\"Choices\":[{\"Variable\":\"$.Random.randomNumber\",\"NumericGreaterThan\":50,\"Next\":\"TextractAsync\"}],\"Default\":\"TextractSync\"},\"TextractSync\":{\"Next\":\"GenerateCsvTask\",\"Type\":\"Task\",\"TimeoutSeconds\":86400,\"ResultPath\":\"$.textract_result\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::states:startExecution.waitForTaskToken\",\"Parameters\":{\"Input\":{\"Token.$\":\"$$.Task.Token\",\"ExecutionId.$\":\"$$.Execution.Id\",\"Payload.$\":\"$\"},\"StateMachineArn\":\"",
+       {
+        "Ref": "TextractSyncStateMachineD0E35813"
+       },
+       "\"}},\"GenerateCsvTask\":{\"End\":true,\"Type\":\"Task\",\"ResultPath\":\"$.csv_output_location\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::states:startExecution.waitForTaskToken\",\"Parameters\":{\"Input\":{\"Token.$\":\"$$.Task.Token\",\"ExecutionId.$\":\"$$.Execution.Id\",\"Payload.$\":\"$\"},\"StateMachineArn\":\"",
+       {
+        "Ref": "GenerateCsvTaskStateMachine31118FC3"
+       },
+       "\"}},\"AsyncToJSON\":{\"Next\":\"GenerateCsvTask\",\"Retry\":[{\"ErrorEquals\":[\"Lambda.ClientExecutionTimeoutException\",\"Lambda.ServiceException\",\"Lambda.AWSLambdaException\",\"Lambda.SdkClientException\"],\"IntervalSeconds\":2,\"MaxAttempts\":6,\"BackoffRate\":2},{\"ErrorEquals\":[\"Lambda.TooManyRequestsException\",\"Lambda.Unknown\"],\"IntervalSeconds\":1,\"MaxAttempts\":100,\"BackoffRate\":1.1}],\"Type\":\"Task\",\"TimeoutSeconds\":900,\"OutputPath\":\"$.Payload\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::lambda:invoke\",\"Parameters\":{\"FunctionName\":\"",
+       {
+        "Fn::GetAtt": [
+         "AsyncToJSONTextractAsyncToJSONB708C612",
+         "Arn"
+        ]
+       },
+       "\",\"Payload.$\":\"$\"}},\"TextractAsync\":{\"Next\":\"AsyncToJSON\",\"Type\":\"Task\",\"TimeoutSeconds\":86400,\"ResultPath\":\"$.textract_result\",\"Resource\":\"arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":states:::states:startExecution.waitForTaskToken\",\"Parameters\":{\"Input\":{\"Token.$\":\"$$.Task.Token\",\"ExecutionId.$\":\"$$.Execution.Id\",\"Payload.$\":\"$\"},\"StateMachineArn\":\"",
+       {
+        "Ref": "TextractAsyncStateMachineCD4A0F0B"
+       },
+       "\"}},\"TooManyQueriesOrPages\":{\"Type\":\"Fail\",\"Error\":\"TooManyQueriesOrPages\",\"Cause\":\"Too many queries > 30 or too many Pages > 3000. See https://docs.aws.amazon.com/textract/latest/dg/limits.html\"}}}"
+      ]
+     ]
+    },
+    "RoleArn": {
+     "Fn::GetAtt": [
+      "QueriesRole13380E42",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "QueriesRoleDefaultPolicyD7CF39AC",
+    "QueriesRole13380E42"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/Queries/Resource"
+   }
+  },
+  "LambdaStartStepFunctionGenericServiceRole8447C9A7": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/LambdaStartStepFunctionGeneric/ServiceRole/Resource"
+   }
+  },
+  "LambdaStartStepFunctionGenericServiceRoleDefaultPolicy42660948": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "states:StartExecution",
+       "Effect": "Allow",
+       "Resource": {
+        "Ref": "QueriesDB6EF58A"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "LambdaStartStepFunctionGenericServiceRoleDefaultPolicy42660948",
+    "Roles": [
+     {
+      "Ref": "LambdaStartStepFunctionGenericServiceRole8447C9A7"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/LambdaStartStepFunctionGeneric/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "LambdaStartStepFunctionGeneric9A1E8F24": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Architectures": [
+     "x86_64"
+    ],
+    "Code": {
+     "ImageUri": {
+      "Fn::Sub": "${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/cdk-hnb659fds-container-assets-${AWS::AccountId}-${AWS::Region}:dc23e236f8a8e4adbe3fd95b42d7c7353cfe48ad0fed3566efd5e21bbe71e491"
+     }
+    },
+    "Environment": {
+     "Variables": {
+      "STATE_MACHINE_ARN": {
+       "Ref": "QueriesDB6EF58A"
+      }
+     }
+    },
+    "MemorySize": 128,
+    "PackageType": "Image",
+    "Role": {
+     "Fn::GetAtt": [
+      "LambdaStartStepFunctionGenericServiceRole8447C9A7",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "LambdaStartStepFunctionGenericServiceRoleDefaultPolicy42660948",
+    "LambdaStartStepFunctionGenericServiceRole8447C9A7"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/LambdaStartStepFunctionGeneric/Resource",
+    "aws:asset:path": "asset.dc23e236f8a8e4adbe3fd95b42d7c7353cfe48ad0fed3566efd5e21bbe71e491",
+    "aws:asset:dockerfile-path": "Dockerfile",
+    "aws:asset:property": "Code.ImageUri"
+   }
+  },
+  "LambdaStartStepFunctionGenericLogRetentionCC510937": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "LambdaStartStepFunctionGeneric9A1E8F24"
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/LambdaStartStepFunctionGeneric/LogRetention/Resource"
+   }
+  },
+  "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/Resource"
+   }
+  },
+  "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "s3:PutBucketNotification",
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36",
+    "Roles": [
+     {
+      "Ref": "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Role/DefaultPolicy/Resource"
+   }
+  },
+  "BucketNotificationsHandler050a0587b7544547bf325f094a3db8347ECC3691": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Description": "AWS CloudFormation handler for \"Custom::S3BucketNotifications\" resources (@aws-cdk/aws-s3)",
+    "Code": {
+     "ZipFile": "import boto3  # type: ignore\nimport json\nimport logging\nimport urllib.request\n\ns3 = boto3.client(\"s3\")\n\nEVENTBRIDGE_CONFIGURATION = 'EventBridgeConfiguration'\n\nCONFIGURATION_TYPES = [\"TopicConfigurations\", \"QueueConfigurations\", \"LambdaFunctionConfigurations\"]\n\ndef handler(event: dict, context):\n  response_status = \"SUCCESS\"\n  error_message = \"\"\n  try:\n    props = event[\"ResourceProperties\"]\n    bucket = props[\"BucketName\"]\n    notification_configuration = props[\"NotificationConfiguration\"]\n    request_type = event[\"RequestType\"]\n    managed = props.get('Managed', 'true').lower() == 'true'\n    stack_id = event['StackId']\n\n    if managed:\n      config = handle_managed(request_type, notification_configuration)\n    else:\n      config = handle_unmanaged(bucket, stack_id, request_type, notification_configuration)\n\n    put_bucket_notification_configuration(bucket, config)\n  except Exception as e:\n    logging.exception(\"Failed to put bucket notification configuration\")\n    response_status = \"FAILED\"\n    error_message = f\"Error: {str(e)}. \"\n  finally:\n    submit_response(event, context, response_status, error_message)\n\ndef handle_managed(request_type, notification_configuration):\n  if request_type == 'Delete':\n    return {}\n  return notification_configuration\n\ndef handle_unmanaged(bucket, stack_id, request_type, notification_configuration):\n  external_notifications = find_external_notifications(bucket, stack_id)\n\n  if request_type == 'Delete':\n    return external_notifications\n\n  def with_id(notification):\n    notification['Id'] = f\"{stack_id}-{hash(json.dumps(notification, sort_keys=True))}\"\n    return notification\n\n  notifications = {}\n  for t in CONFIGURATION_TYPES:\n    external = external_notifications.get(t, [])\n    incoming = [with_id(n) for n in notification_configuration.get(t, [])]\n    notifications[t] = external + incoming\n\n  if EVENTBRIDGE_CONFIGURATION in notification_configuration:\n    notifications[EVENTBRIDGE_CONFIGURATION] = notification_configuration[EVENTBRIDGE_CONFIGURATION]\n  elif EVENTBRIDGE_CONFIGURATION in external_notifications:\n    notifications[EVENTBRIDGE_CONFIGURATION] = external_notifications[EVENTBRIDGE_CONFIGURATION]\n\n  return notifications\n\ndef find_external_notifications(bucket, stack_id):\n  existing_notifications = get_bucket_notification_configuration(bucket)\n  external_notifications = {}\n  for t in CONFIGURATION_TYPES:\n    external_notifications[t] = [n for n in existing_notifications.get(t, []) if not n['Id'].startswith(f\"{stack_id}-\")]\n\n  if EVENTBRIDGE_CONFIGURATION in existing_notifications:\n    external_notifications[EVENTBRIDGE_CONFIGURATION] = existing_notifications[EVENTBRIDGE_CONFIGURATION]\n\n  return external_notifications\n\ndef get_bucket_notification_configuration(bucket):\n  return s3.get_bucket_notification_configuration(Bucket=bucket)\n\ndef put_bucket_notification_configuration(bucket, notification_configuration):\n  s3.put_bucket_notification_configuration(Bucket=bucket, NotificationConfiguration=notification_configuration)\n\ndef submit_response(event: dict, context, response_status: str, error_message: str):\n  response_body = json.dumps(\n    {\n      \"Status\": response_status,\n      \"Reason\": f\"{error_message}See the details in CloudWatch Log Stream: {context.log_stream_name}\",\n      \"PhysicalResourceId\": event.get(\"PhysicalResourceId\") or event[\"LogicalResourceId\"],\n      \"StackId\": event[\"StackId\"],\n      \"RequestId\": event[\"RequestId\"],\n      \"LogicalResourceId\": event[\"LogicalResourceId\"],\n      \"NoEcho\": False,\n    }\n  ).encode(\"utf-8\")\n  headers = {\"content-type\": \"\", \"content-length\": str(len(response_body))}\n  try:\n    req = urllib.request.Request(url=event[\"ResponseURL\"], headers=headers, data=response_body, method=\"PUT\")\n    with urllib.request.urlopen(req) as response:\n      print(response.read().decode(\"utf-8\"))\n    print(\"Status code: \" + response.reason)\n  except Exception as e:\n      print(\"send(..) failed executing request.urlopen(..): \" + str(e))\n"
+    },
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.9",
+    "Timeout": 300
+   },
+   "DependsOn": [
+    "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleDefaultPolicy2CF63D36",
+    "BucketNotificationsHandler050a0587b7544547bf325f094a3db834RoleB6FB88EC"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/BucketNotificationsHandler050a0587b7544547bf325f094a3db834/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "logs:DeleteRetentionPolicy",
+        "logs:PutRetentionPolicy"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+    "Roles": [
+     {
+      "Ref": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Handler": "index.handler",
+    "Runtime": "nodejs18.x",
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+     },
+     "S3Key": "5cc92ed0cea39e2b8de2dbc527dfb5980a3af9564bd1084d840b9787c7d0467e.zip"
+    },
+    "Role": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/Resource",
+    "aws:asset:path": "asset.5cc92ed0cea39e2b8de2dbc527dfb5980a3af9564bd1084d840b9787c7d0467e",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/11RwW7CMAz9Fu4hG0PatONgQkLatKpwR2lqWq9tXMUJU1X135emMGAnPz+/2M/Ok3xdyMeZ+uG5zqt5jZnsd07pSgTq0PNS9iuvK3BifTRnNIWEatTdlT7nU7JSDIOoVZPlSvZBk4BtkBnJiHcKCrttVAEbb7QbuaC44EGgamSfUg0jHeN11oQGAdoeFDM4ljf93kZmrMkUWmJ0ZLvRimAH7fE8gA9OccXyI7rbmhNV/wTxBA4+lS7RRBf3eUmoQWwU1oPIO6MaysPZ9iqbLEcwCB4b7alFHckIdj5jbbG9LH2bh3tREWxRkYIDEyW8vGwZVxvE2rOjJgUmb/V0oD98V0osnTAHK+LD4L9AU4jbh1/etT7+65pMjpOFpHMlmYelfJGL59k3I86tD14akOkUfwFN/zc1MgIAAA=="
+   },
+   "Metadata": {
+    "aws:cdk:path": "DemoQueries/CDKMetadata/Default"
+   },
+   "Condition": "CDKMetadataAvailable"
+  }
+ },
+ "Outputs": {
+  "DocumentUploadLocation": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "s3://",
+      {
+       "Ref": "TextratcQueries0C9ECF26"
+      },
+      "/uploads/"
+     ]
+    ]
+   },
+   "Export": {
+    "Name": {
+     "Fn::Join": [
+      "",
+      [
+       {
+        "Ref": "AWS::StackName"
+       },
+       "-DocumentUploadLocation"
+      ]
+     ]
+    }
+   }
+  },
+  "StateMachineARN": {
+   "Value": {
+    "Ref": "TextractSyncStateMachineD0E35813"
+   }
+  },
+  "StartStepFunctionLambdaLogGroup": {
+   "Value": {
+    "Fn::GetAtt": [
+     "LambdaStartStepFunctionGenericLogRetentionCC510937",
+     "LogGroupName"
+    ]
+   }
+  },
+  "StepFunctionFlowLink": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Ref": "AWS::Region"
+      },
+      ".console.aws.amazon.com/states/home?region=",
+      {
+       "Ref": "AWS::Region"
+      },
+      "#/statemachines/view/",
+      {
+       "Ref": "QueriesDB6EF58A"
+      }
+     ]
+    ]
+   },
+   "Export": {
+    "Name": {
+     "Fn::Join": [
+      "",
+      [
+       {
+        "Ref": "AWS::StackName"
+       },
+       "-StepFunctionFlowLink"
+      ]
+     ]
+    }
+   }
+  }
+ },
+ "Conditions": {
+  "CDKMetadataAvailable": {
+   "Fn::Or": [
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "af-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-northeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ap-southeast-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "ca-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "cn-northwest-1"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-central-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-north-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-2"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "eu-west-3"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "me-south-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "sa-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-east-2"
+       ]
+      }
+     ]
+    },
+    {
+     "Fn::Or": [
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-west-1"
+       ]
+      },
+      {
+       "Fn::Equals": [
+        {
+         "Ref": "AWS::Region"
+        },
+        "us-west-2"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}
