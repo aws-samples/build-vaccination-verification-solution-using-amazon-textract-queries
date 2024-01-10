@@ -1,0 +1,8 @@
+{
+  "DemoQueries": {
+    "DocumentUploadLocation": "s3://demoqueries-textratcqueries0c9ecf26-mn53c8386fsn/uploads/",
+    "StepFunctionFlowLink": "https://us-east-1.console.aws.amazon.com/states/home?region=us-east-1#/statemachines/view/arn:aws:states:us-east-1:517731454997:stateMachine:QueriesDB6EF58A-ZR55zku5hHLC",
+    "StateMachineARN": "arn:aws:states:us-east-1:517731454997:stateMachine:TextractSyncStateMachineD0E35813-4rJR4WI25viv",
+    "StartStepFunctionLambdaLogGroup": "/aws/lambda/DemoQueries-LambdaStartStepFunctionGeneric9A1E8F24-Yr51wUmRVIQI"
+  }
+}
