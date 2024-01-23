@@ -9,6 +9,7 @@ Amazon Textract Queries helps address these challenges as it allows you to speci
 Follow the step-by-step implementation guide to build a vaccination status verification solution using Amazon Textract Queries. The solution showcases how to process vaccination cards using an Amazon Textract query, verify the vaccination status, and store the information for future use.
 
 ### High Level Architecture:
+The following diagram illustrates the solution architecture. 
 
 ![image](https://github.com/aws-samples/build-vaccination-verification-solution-using-amazon-textract-queries/assets/45221995/0148e14a-68ea-464c-8dc5-b60411b03330)
 
